@@ -70,18 +70,30 @@ function render() {
   }
 }
 
+// Each choice of build gets a number. Changing the selector quickly starts several of these at once, and
+// only the newest may keep a guard: every older one must stop its own, or it would keep polling the RPC
+// in the background for as long as the page is open.
+let latestChoice = 0;
+
 async function begin(profile) {
-  if (guard !== undefined) await guard.stop();
+  const mine = ++latestChoice;
+  const previous = guard;
+  guard = undefined;
+  deposit = undefined;
+  depositButton.disabled = true;
+  if (previous !== undefined) await previous.stop();
+  if (mine !== latestChoice) return; // a newer choice arrived while the old guard was stopping
+
   const next = createVersionGuard(configFor(profile));
   guard = next;
   deposit = next.guard('vault', async (amount) => `Pretended to send a transaction depositing ${amount}.`);
 
   badge.textContent = 'checking';
   badge.className = 'badge waiting';
-  depositButton.disabled = true;
   hint.textContent = 'Checking which code the contract is running…';
 
   next.subscribe((change) => {
+    if (guard !== next) return; // a guard that has been replaced must not touch the page
     log(`${change.name}: ${change.from} → ${change.to}`);
     render();
   });
@@ -94,6 +106,11 @@ async function begin(profile) {
       hint.textContent = error.message;
       log(`Could not start: ${error.message}`);
     }
+    return;
+  }
+  if (guard !== next) {
+    // Replaced while it was starting: make sure it is not left polling.
+    await next.stop();
     return;
   }
   render();
