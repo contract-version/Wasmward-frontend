@@ -6,7 +6,7 @@ It is the "disable write buttons with `subscribe`" example from Wasmward's docs,
 
 ## What you will see
 
-- The contract's status (`supported`, `unsupported`, `missing`, ...), the live Wasm hash, and the label of the supported version it matched.
+- The contract's status (`supported`, `unsupported`, `missing`, ...), the live Wasm hash, the label of the supported version it matched, and **how long the contract has left before it expires** (turning amber under about a week). That last row uses `ledgersUntilExpiry` and `describeTimeLeft` from the library and is informational: it never changes whether writes are allowed.
 - A **Deposit 10 (demo)** button that is enabled only while the guard says writes are allowed. Clicking it does not send a transaction; it shows what a guarded call looks like.
 - A switch that pretends this is an **older build of the app**, one that was never tested against the contract's current code. The status becomes `unsupported`, the button turns off, and the page shows the exact reason Wasmward gives:
 
