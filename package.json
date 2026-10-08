@@ -1,0 +1,25 @@
+{
+  "name": "wasmward-browser-example",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A browser page that uses Wasmward to disable a write button when a contract's live code is not supported.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@10.30.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node serve.mjs",
+    "dev": "node build.mjs && node serve.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.27.7"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
