@@ -1,4 +1,10 @@
-import { createVersionGuard, loadConfig } from '@wasmward/core';
+import {
+  createVersionGuard,
+  describeTimeLeft,
+  EXPIRY_WARNING_LEDGERS,
+  ledgersUntilExpiry,
+  loadConfig,
+} from '@wasmward/core';
 
 // The Wasmward test contract on Stellar testnet, running its "v1" build.
 const CONTRACT_ID = 'CBR5ZFDI2GBXG66DAEWWHSAK4NDLKSKHWVUEUSOM4UOBM66TI6DYPDPV';
@@ -55,6 +61,21 @@ function render() {
   $('hash').textContent = state.liveWasmHash ?? 'unknown';
   $('label').textContent = state.matchedLabel ?? 'none';
   $('checked').textContent = ago(state.lastSuccessAt);
+
+  // A contract instance expires unless someone extends it. The guard records how long was left at the last
+  // check, which is informational: it never changes whether writes are allowed.
+  const left = ledgersUntilExpiry(state);
+  const expiry = $('expiry');
+  if (left === undefined) {
+    expiry.textContent = 'unknown';
+    expiry.className = '';
+  } else if (left < EXPIRY_WARNING_LEDGERS) {
+    expiry.textContent = `${describeTimeLeft(left)}: extend its lifetime soon`;
+    expiry.className = 'warn';
+  } else {
+    expiry.textContent = describeTimeLeft(left);
+    expiry.className = '';
+  }
   $('error').textContent = state.lastError ?? 'none';
 
   // The point of the example: the button follows the guard.

@@ -88,6 +88,7 @@
       li { padding: 6px 0; border-top: 1px solid var(--line); font-size: 0.9rem; }
       li:first-child { border-top: 0; }
       li time { color: var(--muted); margin-right: 8px; }
+      .warn { color: var(--wait); background: var(--wait-bg); border-radius: 6px; padding: 0 8px; display: inline-block; }
       noscript { display: block; padding: 12px; background: var(--bad-bg); color: var(--bad); border-radius: 8px; }
     </style>
   </head>
@@ -112,6 +113,8 @@
           <dd id="label">none</dd>
           <dt>Last check</dt>
           <dd id="checked">never</dd>
+          <dt>Time left</dt>
+          <dd id="expiry">unknown</dd>
           <dt>Last error</dt>
           <dd id="error">none</dd>
         </dl>
