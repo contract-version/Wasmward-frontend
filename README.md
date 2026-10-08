@@ -62,6 +62,13 @@ To use the same pattern in your own app:
 
 See [the operations guide](https://github.com/contract-version/Wasmward-backend/blob/main/docs/OPERATIONS.md) for the limits, and remember that code running in a browser can be tampered with by its user: this protects honest clients, it is not access control.
 
+## Keeping the demo honest
+
+The demo is only as good as the contract it points at. [`wasmward.json`](wasmward.json) describes that contract the way Wasmward describes any contract, and CI uses it twice:
+
+- an offline check that `src/main.js` and `wasmward.json` still name the same contract and hash;
+- a `contract-alive` job that runs the [Wasmward GitHub Action](https://github.com/contract-version/Wasmward-backend#in-github-actions) with `min-ttl-days: 1`, so a missing, changed or about-to-expire contract turns CI red. It needs testnet, so it is a separate job from the build.
+
 ## Notes
 
 - Everything shown is set with `textContent`, never as HTML, so nothing returned by an RPC can inject markup.
