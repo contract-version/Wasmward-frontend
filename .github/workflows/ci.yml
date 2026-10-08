@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      WASMWARD_CORE_DIR: ${{ github.workspace }}/Wasmward-backend
+    steps:
+      - uses: actions/checkout@v4
+      # The library is not on npm yet, so the example is built against a checkout of its repository.
+      - name: Check out the library
+        uses: actions/checkout@v4
+        with:
+          repository: contract-version/Wasmward-backend
+          path: Wasmward-backend
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the library's dependencies
+        working-directory: Wasmward-backend
+        run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Check the bundle
+        run: |
+          test -s dist/app.js
+          # The browser bundle must not reach for Node-only modules.
+          if grep -E -o 'from ?"(node:)?(fs|path|os|child_process)"' dist/app.js; then
+            echo "dist/app.js imports a Node-only module" >&2
+            exit 1
+          fi
