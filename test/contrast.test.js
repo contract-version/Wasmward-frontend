@@ -67,6 +67,7 @@ const PAIRS = [
   ['bad', 'bad-bg', 4.5, 'the "blocked" badge'],
   ['wait', 'wait-bg', 4.5, 'the "waiting" badge and the expiry warning'],
   ['accent', 'card', 4.5, 'a link in a card'],
+  ['accent', 'bg', 4.5, 'a link in the footer, which sits on the page background'],
   ['on-accent', 'accent', 4.5, 'the label of the button'],
   ['muted', 'line', 4.5, 'the label of a disabled button'],
   ['accent', 'card', 3, 'the focus ring against the card'],
