@@ -18,7 +18,15 @@ That is what [CI](.github/workflows/ci.yml) runs, on Node 20 and 22. One more CI
 
 **Run the tests from a clean state at least once before you push** (`rm -rf dist dist-test`, then `pnpm test`). CI runs the tests before it builds, so a test that quietly depends on `dist/` passes on a machine where you have built and fails there.
 
+## Changing what the page does
+
+The behaviour is `createApp` in `src/app.js`, tested against a fake DOM and a fake guard: write the failing test first, then change the code. [docs/TESTING.md](docs/TESTING.md) says how, and lists what will catch you out (an awaited `h.run()` while retrying, handlers that wait on timers, files relative to `test/support/`). After a change to what the page shows, look at it in a browser too: several bugs here were only visible there.
+
 ## Rules that the tests enforce
+
+- **Write only what changed.** Set text through `setText`/`setClass`, never `el.textContent = ...` on something the refresh touches. Rewriting a live region with the same words can make a screen reader read it again, once a second (`test/app-writes.test.js`).
+- **The log is for changes of the contract.** Do not log interface noise such as switching tabs.
+- **Anything read from a URL, storage or the clipboard is untrusted input.** It may only ever select one of a fixed set of values (see `route.js`, `theme.js`), and it is shown as text.
 
 - **Edited the CSS? Run `pnpm csp:update`.** The page's Content-Security-Policy allows the one inline stylesheet by its SHA-256. Without the new hash a browser leaves the page unstyled, and `test/csp.test.js` fails.
 - **Never put text into the page as HTML.** Use `textContent` or `document.createTextNode`. `test/no-html-injection.test.js` rejects `innerHTML`, `eval` and the like, and inline scripts and handlers in `index.html`.
