@@ -3,6 +3,9 @@ import { ago } from './format.js';
 import { explorerUrl } from './links.js';
 import { CANNOT_CHECK, CHECKING, statusView } from './status-view.js';
 
+/** The most entries the "Changes" log keeps. A page can stay open for days; older entries are dropped. */
+export const LOG_LIMIT = 100;
+
 /**
  * The page's behaviour, with everything it touches passed in so it can be tested without a browser:
  *   document     the page (or a stand-in with the same few methods)
@@ -33,7 +36,9 @@ export function createApp({ document, createGuard, configFor, contractId, profil
     const time = document.createElement('time');
     time.textContent = new Date(now()).toLocaleTimeString();
     item.append(time, document.createTextNode(text));
-    $('log').prepend(item);
+    const list = $('log');
+    list.prepend(item);
+    while (list.children.length > LOG_LIMIT) list.lastElementChild.remove();
   }
 
   function render() {
