@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createApp } from '../../src/app.js';
 import { CONTRACT_ID, configFor, PASSPHRASE, PROFILE_NAMES, RPC_URL } from '../../src/demo-config.js';
-import { documentFromHtml } from './fake-dom.js';
+import { documentFromHtml, FakeDocument } from './fake-dom.js';
 import { fakeGuardFactory } from './fake-guard.js';
 
 // Read from the working directory, which is the repository root under `pnpm test`. A path relative to this file
@@ -29,6 +29,8 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
   const factory = fakeGuardFactory(setup);
   const timers = [];
   const waits = [];
+  // Where the page's global 'error' and 'unhandledrejection' events arrive (the window, in a browser).
+  const events = new FakeDocument();
   let time = START;
   const app = createApp({
     document: doc,
@@ -37,6 +39,7 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
     contractId: CONTRACT_ID,
     profileNames: PROFILE_NAMES,
     network: { passphrase: PASSPHRASE, rpcUrl: RPC_URL },
+    events,
     now: () => time,
     wait: (ms) => new Promise((resolve) => waits.push({ ms, resolve })),
   });
@@ -46,6 +49,7 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
     app,
     timers,
     waits,
+    events,
     guards: factory.guards,
     get guard() {
       return factory.guards.at(-1);

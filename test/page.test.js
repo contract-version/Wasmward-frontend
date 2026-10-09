@@ -30,3 +30,10 @@ test('no id appears twice in index.html', () => {
 test('the script is loaded from the bundle the build writes', () => {
   assert.match(html, /<script[^>]+src="\.?\/?dist\/app\.js"/);
 });
+
+test('the "something went wrong" notice is an alert and starts hidden, so it is announced only when it is needed', () => {
+  const tag = html.match(/<div\b[^>]*\bid="problem"[^>]*>/)?.[0];
+  assert.ok(tag, 'index.html has no #problem element');
+  assert.match(tag, /\brole="alert"/);
+  assert.match(tag, /\shidden(\s|>|\/)/);
+});
