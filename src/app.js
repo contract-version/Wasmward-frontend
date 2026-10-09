@@ -1,5 +1,5 @@
 import { describeExpiry } from './expiry.js';
-import { ago } from './format.js';
+import { ago, describeNetwork } from './format.js';
 import { explorerUrl } from './links.js';
 import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
 import { CANNOT_CHECK, CHECKING, PAUSED, statusView } from './status-view.js';
@@ -14,6 +14,7 @@ export const LOG_LIMIT = 100;
  *   configFor    the config for one of the pretend releases of this app
  *   contractId   the contract being watched, for the explorer link
  *   profileNames how each release is named in the log
+ *   network      { passphrase, rpcUrl } of the network watched, for the "Network" row
  *   now          the clock, in milliseconds since the epoch
  *   wait         waits this many milliseconds, for the pause between retries
  *
@@ -25,6 +26,7 @@ export function createApp({
   configFor,
   contractId,
   profileNames,
+  network,
   now = Date.now,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
@@ -226,6 +228,7 @@ export function createApp({
 
   /** Connects the page: the explorer link, the button, the selector, and a once-a-second refresh. Starts checking. */
   function run({ setInterval = globalThis.setInterval, initialProfile = 'current' } = {}) {
+    $('network').textContent = describeNetwork(network.passphrase, network.rpcUrl);
     $('explorer').href = explorerUrl(contractId);
     $('explorer').hidden = false;
     depositButton.addEventListener('click', onDeposit);
