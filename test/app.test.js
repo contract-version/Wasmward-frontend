@@ -147,3 +147,21 @@ test('a write the guard refuses is logged with the reason, not thrown', async ()
   await h.el('deposit').click();
   assert.deepEqual(h.logLines(), ["Writes to 'vault' are blocked: the status is stale"]);
 });
+
+test('the page says which network it watches and which RPC host it asks', async () => {
+  const h = harness();
+  await h.run();
+  assert.equal(h.text('network'), 'Stellar testnet (soroban-testnet.stellar.org)');
+});
+
+test('the network row is there before the first check finishes, and does not change when the contract does', async () => {
+  let release;
+  const h = harness({ setup: (guard) => (release = guard.holdStart()) });
+  const running = h.run();
+  await h.settle();
+  assert.equal(h.text('network'), 'Stellar testnet (soroban-testnet.stellar.org)');
+  release();
+  await running;
+  await h.guard.emit('pending', 'unsupported');
+  assert.equal(h.text('network'), 'Stellar testnet (soroban-testnet.stellar.org)');
+});

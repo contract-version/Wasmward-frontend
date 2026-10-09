@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { createApp } from '../../src/app.js';
-import { CONTRACT_ID, configFor, PROFILE_NAMES } from '../../src/demo-config.js';
+import { CONTRACT_ID, configFor, PASSPHRASE, PROFILE_NAMES, RPC_URL } from '../../src/demo-config.js';
 import { documentFromHtml } from './fake-dom.js';
 import { fakeGuardFactory } from './fake-guard.js';
 
@@ -36,6 +36,7 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
     configFor: configForOverride,
     contractId: CONTRACT_ID,
     profileNames: PROFILE_NAMES,
+    network: { passphrase: PASSPHRASE, rpcUrl: RPC_URL },
     now: () => time,
     wait: (ms) => new Promise((resolve) => waits.push({ ms, resolve })),
   });
