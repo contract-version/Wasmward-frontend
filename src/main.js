@@ -1,5 +1,6 @@
 import { createVersionGuard, loadConfig } from '@wasmward/core';
 import { describeExpiry } from './expiry.js';
+import { ago } from './format.js';
 import { explorerUrl } from './links.js';
 
 // The Wasmward test contract on Stellar testnet, running its "v1" build.
@@ -42,12 +43,6 @@ function log(text) {
   $('log').prepend(item);
 }
 
-function ago(timestamp) {
-  if (timestamp === undefined) return 'never';
-  const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
-  return seconds < 2 ? 'just now' : `${seconds} seconds ago`;
-}
-
 // Everything shown comes from the guard. Text is always set with textContent, never as HTML.
 function render() {
   if (guard === undefined) return;
@@ -58,7 +53,7 @@ function render() {
   badge.className = `badge ${writable ? 'supported' : state.status === 'pending' ? 'waiting' : 'blocked'}`;
   $('hash').textContent = state.liveWasmHash ?? 'unknown';
   $('label').textContent = state.matchedLabel ?? 'none';
-  $('checked').textContent = ago(state.lastSuccessAt);
+  $('checked').textContent = ago(state.lastSuccessAt, Date.now());
 
   // A contract expires unless someone extends it, and its instance and Wasm code expire separately.
   const expiry = describeExpiry(state);
