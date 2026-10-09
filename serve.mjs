@@ -1,5 +1,5 @@
 // A tiny static file server for trying the example locally. No dependencies.
-import { createStaticServer, parsePort } from './static-server.mjs';
+import { createStaticServer, formatRequest, parsePort } from './static-server.mjs';
 
 let port;
 try {
@@ -9,7 +9,8 @@ try {
   process.exit(1);
 }
 
-const server = createStaticServer({ root: '.' });
+// One line per request, so a 404 or a refused request is visible: "GET /dist/app.js 200 3ms".
+const server = createStaticServer({ root: '.', log: (entry) => console.log(formatRequest(entry)) });
 
 server.on('error', (error) => {
   console.error(
