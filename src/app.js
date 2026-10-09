@@ -1,6 +1,7 @@
 import { describeExpiry } from './expiry.js';
 import { ago } from './format.js';
 import { explorerUrl } from './links.js';
+import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
 import { CANNOT_CHECK, CHECKING, statusView } from './status-view.js';
 
 /** The most entries the "Changes" log keeps. A page can stay open for days; older entries are dropped. */
@@ -14,10 +15,19 @@ export const LOG_LIMIT = 100;
  *   contractId   the contract being watched, for the explorer link
  *   profileNames how each release is named in the log
  *   now          the clock, in milliseconds since the epoch
+ *   wait         waits this many milliseconds, for the pause between retries
  *
  * Everything shown comes from the guard. Text is always set with textContent, never as HTML.
  */
-export function createApp({ document, createGuard, configFor, contractId, profileNames, now = Date.now }) {
+export function createApp({
+  document,
+  createGuard,
+  configFor,
+  contractId,
+  profileNames,
+  now = Date.now,
+  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+}) {
   const $ = (id) => document.getElementById(id);
   const badge = $('badge');
   const depositButton = $('deposit');
@@ -25,6 +35,10 @@ export function createApp({ document, createGuard, configFor, contractId, profil
 
   let guard;
   let deposit;
+  // True while the current guard has not been able to start. The page then shows why (badge and hint), and the
+  // once-a-second refresh must leave that alone: the guard exists but has checked nothing, so a normal render would
+  // replace the explanation with "pending".
+  let startProblem = false;
 
   function showBadge({ text, tone }) {
     badge.textContent = text;
@@ -42,7 +56,7 @@ export function createApp({ document, createGuard, configFor, contractId, profil
   }
 
   function render() {
-    if (guard === undefined) return;
+    if (guard === undefined || startProblem) return;
     const state = guard.status().vault;
     const writable = guard.isWritable('vault');
 
@@ -92,6 +106,7 @@ export function createApp({ document, createGuard, configFor, contractId, profil
     const previous = guard;
     guard = undefined;
     deposit = undefined;
+    startProblem = false;
     depositButton.disabled = true;
     if (previous !== undefined) await discard(previous);
     if (mine !== latestChoice) return; // a newer choice arrived while the old guard was stopping
@@ -117,16 +132,32 @@ export function createApp({ document, createGuard, configFor, contractId, profil
       log(`${change.name}: ${change.from} → ${change.to}`);
       render();
     });
-    try {
-      await next.start();
-    } catch (error) {
-      if (guard === next) {
+    // Starting can fail because the network is down for a moment, which a retry fixes, or because the RPC serves
+    // another network, which it does not. A failed start can simply be asked again (the guard allows it).
+    let retries = 0;
+    for (;;) {
+      try {
+        await next.start();
+        break;
+      } catch (error) {
+        if (guard !== next) return; // replaced meanwhile, and already stopped by whoever replaced it
+        startProblem = true;
         showBadge(CANNOT_CHECK);
-        hint.textContent = error.message;
-        log(`Could not start: ${error.message}`);
+        if (isPermanent(error)) {
+          hint.textContent = error.message;
+          log(`Could not start: ${error.message}`);
+          return;
+        }
+        retries += 1;
+        const delay = retryDelayMs(retries);
+        hint.textContent = `${error.message} (trying again in ${describeDelay(delay)})`;
+        if (retries === 1) log(`Could not start: ${error.message} (will keep trying)`);
+        await wait(delay);
+        if (guard !== next) return;
       }
-      return;
     }
+    startProblem = false;
+    if (retries > 0) log(`Connected after ${retries} ${retries === 1 ? 'retry' : 'retries'}.`);
     if (guard !== next) {
       // Replaced while it was starting: make sure it is not left polling.
       await discard(next);
