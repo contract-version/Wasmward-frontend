@@ -80,10 +80,24 @@ The demo is only as good as the contract it points at. [`wasmward.json`](wasmwar
 - an offline test (`test/demo-config.test.js`) that the demo's config in `src/demo-config.js` and `wasmward.json` are the same: contract, hash, network and supported list;
 - a `contract-alive` job that runs the [Wasmward GitHub Action](https://github.com/contract-version/Wasmward-backend#in-github-actions) with `min-ttl-days: 1`, so a missing, changed or about-to-expire contract turns CI red. It needs testnet, so it is a separate job from the build.
 
+## Security
+
+This page shows what a public RPC says, so it is written not to trust it:
+
+- **Nothing is parsed as HTML.** Everything shown is set with `textContent`. A test scans `src/` for `innerHTML`, `eval` and similar, and `index.html` for inline scripts and handlers, so the claim stays true.
+- **A Content-Security-Policy in the page** (a `<meta>` tag, so it holds wherever the page is hosted) allows only its own script, one RPC to talk to, the inline stylesheet by hash, and `data:` images. Tests check each directive and that the stylesheet hash is current; if you edit the CSS, run `pnpm csp:update`. Checked in a browser: the page works under it, and a request to another host and an injected inline script are blocked.
+- **The badge shows the effective status** from `guard.health()`, so a stalled poll reads `stale`, not a green "supported" while writes are already blocked. A status the page does not know is shown as blocked.
+- **The dev server is small on purpose.** It answers GET and HEAD for `index.html` and `dist/` only, refuses path tricks, answers a malformed URL with a 400 instead of stopping, and sets `nosniff`, `no-referrer` and `no-cache`. It is for trying the example, not for hosting it.
+
+Code running in a browser can still be tampered with by its user: this protects honest clients, it is not access control.
+
+## Accessibility
+
+The status badge is a live region (`role="status"`), the log announces changes politely, and controls have a visible focus ring. The page follows the system light or dark setting, and a test checks the WCAG contrast of every pair of colours it draws in both themes (it found three real problems: an unreadable link and button label in dark mode, and a disabled button label just under the threshold).
+
 ## Notes
 
-- Everything shown is set with `textContent`, never as HTML, so nothing returned by an RPC can inject markup.
-- The page works at phone width and follows the system light or dark setting.
+- The page works at phone width.
 - `dist/` is a build output and is not committed.
 
 ## License
