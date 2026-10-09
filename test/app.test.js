@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { ConfigError } from '@wasmward/core';
 import { CONTRACT_ID, V1_HASH } from '../src/demo-config.js';
 import { harness, START } from './support/app-harness.js';
 
@@ -122,8 +123,8 @@ test('each log line starts with a time', async () => {
   assert.equal(item.children[0].textContent, new Date(START).toLocaleTimeString());
 });
 
-test('if the guard cannot start, the badge, hint and log say why, and the button stays off', async () => {
-  const h = harness({ setup: (guard) => guard.failStart(new Error('the RPC serves another network')) });
+test('if the guard cannot start for good, the badge, hint and log say why, and the button stays off', async () => {
+  const h = harness({ setup: (guard) => guard.failStart(new ConfigError('the RPC serves another network')) });
   await h.run();
   assert.equal(h.text('badge'), 'cannot check');
   assert.equal(h.el('badge').className, 'badge blocked');
