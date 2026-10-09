@@ -2,7 +2,7 @@ import { describeExpiry } from './expiry.js';
 import { ago, describeNetwork, describeSupported } from './format.js';
 import { explorerUrl } from './links.js';
 import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
-import { CANNOT_CHECK, CHECKING, PAUSED, statusView } from './status-view.js';
+import { CANNOT_CHECK, CHECKING, PAUSED, pageTitle, statusView } from './status-view.js';
 
 /** The most entries the "Changes" log keeps. A page can stay open for days; older entries are dropped. */
 export const LOG_LIMIT = 100;
@@ -56,6 +56,8 @@ export function createApp({
   function showBadge({ text, tone }) {
     badge.textContent = text;
     badge.className = `badge ${tone}`;
+    // The tab shows the status too: the one thing visible about a page in a background tab.
+    document.title = pageTitle({ text, tone });
   }
 
   // Something the page did not expect: from a bug, or a library. Left alone the page would just stop working with
