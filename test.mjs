@@ -24,5 +24,7 @@ await build({
 });
 
 const bundled = tests.map((file) => `dist-test/${file.replace(/\.js$/, '.mjs')}`);
-const run = spawnSync(process.execPath, ['--test', ...bundled], { stdio: 'inherit' });
+// --test-timeout: a test that never finishes (a promise nobody resolves) fails after a minute, instead of making
+// the whole run, and CI with it, hang until something kills it.
+const run = spawnSync(process.execPath, ['--test', '--test-timeout=60000', ...bundled], { stdio: 'inherit' });
 process.exit(run.status ?? 1);
