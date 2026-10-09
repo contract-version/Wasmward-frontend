@@ -39,6 +39,7 @@ Then open <http://127.0.0.1:5173>. To keep the library somewhere else, set `WASM
 | `pnpm dev` | Both of the above. |
 | `pnpm test` | Runs the tests in `test/` in Node, against the real library. They cover the page's display logic, that every element `main.js` looks up exists in `index.html`, the demo's config against `wasmward.json`, the Content-Security-Policy, the colour contrast of both themes, and the dev server. |
 | `pnpm check:bundle` | After a build: no Node-only modules in the bundle, and it is within its size budget (1.5 MB, 350 KB gzipped). |
+| `pnpm analyze` | After a build: what the bundle is made of, by package (from `dist/meta.json`). `--top N` shows more rows. |
 | `pnpm csp:update` | Rewrites the stylesheet hash in the page's Content-Security-Policy after the CSS changes (`node update-csp.mjs --check` only reports). |
 
 The contract row links to its page on stellar.expert; the link is only built from a valid contract address.
