@@ -18,6 +18,8 @@ export const START = Date.parse('2026-10-09T12:00:00Z');
  *   h.text(id)         its text
  *   h.advance(ms)      moves the clock on
  *   h.tick()           runs what setInterval was given, as the timer would
+ *   h.waits            the waits the app is in (newest last): { ms, resolve }
+ *   h.elapse()         lets the oldest wait end, and lets the app carry on
  *   h.logLines()       the log, newest first, without the time of day
  *   h.choose(profile)  does what a person does in the selector
  */
@@ -25,6 +27,7 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
   const doc = documentFromHtml(html);
   const factory = fakeGuardFactory(setup);
   const timers = [];
+  const waits = [];
   let time = START;
   const app = createApp({
     document: doc,
@@ -33,12 +36,14 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
     contractId: CONTRACT_ID,
     profileNames: PROFILE_NAMES,
     now: () => time,
+    wait: (ms) => new Promise((resolve) => waits.push({ ms, resolve })),
   });
 
   const h = {
     doc,
     app,
     timers,
+    waits,
     guards: factory.guards,
     get guard() {
       return factory.guards.at(-1);
@@ -55,6 +60,12 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
       const select = doc.getElementById('profile');
       select.value = profile;
       await select.dispatch('change');
+    },
+    /** Ends the oldest wait, as if its time had passed, and lets the app carry on. */
+    async elapse() {
+      waits.shift().resolve();
+      await new Promise((resolve) => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
     },
     /** Lets promises that are already resolved run their continuations. */
     settle: () => new Promise((resolve) => setImmediate(resolve)),
