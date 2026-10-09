@@ -28,6 +28,16 @@ export function requestedPath(target) {
   return path.includes('\0') ? undefined : path;
 }
 
+export const DEFAULT_PORT = 5173;
+
+/** The port to listen on from the text of PORT (undefined means "not set"). Throws an Error that says what is allowed. */
+export function parsePort(text) {
+  if (text === undefined) return DEFAULT_PORT;
+  const port = /^\d+$/.test(text) ? Number(text) : NaN;
+  if (!(port >= 1 && port <= 65_535)) throw new Error(`PORT must be a whole number from 1 to 65535, not '${text}'`);
+  return port;
+}
+
 /**
  * Headers on every response, errors included. nosniff stops a browser from guessing a type other than the one
  * sent; no-referrer keeps the address of this page out of requests it makes; no-cache means a rebuilt bundle is
