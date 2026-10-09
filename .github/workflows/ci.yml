@@ -17,6 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       WASMWARD_CORE_DIR: ${{ github.workspace }}/Wasmward-backend
     steps:
@@ -48,6 +49,7 @@ jobs:
   # testnet outage or an expiring contract fails this check without hiding whether the demo builds.
   contract-alive:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Check the contract the demo depends on (at least 1 day of life left)
