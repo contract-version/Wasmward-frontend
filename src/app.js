@@ -1,5 +1,5 @@
 import { describeExpiry } from './expiry.js';
-import { ago, describeNetwork } from './format.js';
+import { ago, describeNetwork, describeSupported } from './format.js';
 import { explorerUrl } from './links.js';
 import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
 import { CANNOT_CHECK, CHECKING, PAUSED, statusView } from './status-view.js';
@@ -44,12 +44,43 @@ export function createApp({
   // The build being watched, and whether checking is paused because the tab is in the background. A hidden tab
   // would otherwise poll the RPC every few seconds for as long as it stays open.
   let currentProfile;
+  // The builds the current choice supports, and a key for what the list shows now, so it is only rebuilt when it
+  // changes: a list that is replaced every second is read out again by a screen reader every second.
+  let supportedList = [];
+  let supportedShown;
   let paused = false;
   const hidden = () => document.visibilityState === 'hidden';
 
   function showBadge({ text, tone }) {
     badge.textContent = text;
     badge.className = `badge ${tone}`;
+  }
+
+  function showSupported(liveHash) {
+    const rows = describeSupported(supportedList, liveHash);
+    const key = JSON.stringify(rows);
+    if (key === supportedShown) return;
+    supportedShown = key;
+    const list = $('supported');
+    list.textContent = '';
+    for (const row of rows) {
+      const item = document.createElement('li');
+      const label = document.createElement('span');
+      label.className = 'build-label';
+      label.textContent = row.label;
+      const hash = document.createElement('code');
+      hash.textContent = row.short;
+      hash.setAttribute('title', row.hash);
+      // Real spaces between the parts, not only a gap in the layout: text read aloud or copied has no gap.
+      item.append(label, ' ', hash);
+      if (row.live) {
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'running now';
+        item.append(' ', tag);
+      }
+      list.append(item);
+    }
   }
 
   function log(text) {
@@ -71,6 +102,7 @@ export function createApp({
     // "supported" while writes are already blocked.
     showBadge(statusView(guard.health().contracts.vault.status));
     $('hash').textContent = state.liveWasmHash ?? 'unknown';
+    showSupported(state.liveWasmHash);
     $('label').textContent = state.matchedLabel ?? 'none';
     $('checked').textContent = ago(state.lastSuccessAt, now());
 
@@ -122,7 +154,10 @@ export function createApp({
 
     let next;
     try {
-      next = createGuard(configFor(profile));
+      const config = configFor(profile);
+      next = createGuard(config);
+      supportedList = config.contracts?.vault?.supported ?? [];
+      showSupported(undefined);
     } catch (error) {
       // Nothing to watch with: say so, rather than leave a page that has quietly stopped working.
       showBadge(CANNOT_CHECK);
