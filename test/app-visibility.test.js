@@ -22,7 +22,7 @@ test('a tab that goes to the background stops polling: its guard is stopped and 
   assert.equal(h.text('badge'), 'paused');
   assert.equal(h.el('badge').className, 'badge waiting');
   assert.equal(h.el('deposit').disabled, true);
-  assert.equal(h.logLines()[0], 'Checking paused: this tab is hidden.');
+  assert.equal(h.logLines().length, 0, 'going to the background is not a change of the contract, so it is not logged');
 });
 
 test('when it comes back a fresh guard checks at once, and the page shows the contract again', async () => {
@@ -36,7 +36,7 @@ test('when it comes back a fresh guard checks at once, and the page shows the co
   assert.equal(h.guard.calls.start, 1);
   assert.equal(h.text('badge'), 'supported');
   assert.equal(h.el('deposit').disabled, false);
-  assert.equal(h.logLines()[0], 'Checking again: this tab is visible.');
+  assert.ok(!h.logLines().some((line) => /Checking (paused|again)/.test(line)), 'coming back is not logged either');
 });
 
 test('it comes back to the build that was chosen, not the first one', async () => {
@@ -176,4 +176,17 @@ test('hiding the tab while a switch of build waits for the old guard to stop can
   await h.show();
   await h.settle();
   assert.deepEqual(hashesOf(h.guard), ['0'.repeat(64)]);
+});
+
+test('switching tabs again and again does not fill the Changes log, which is for changes of the contract', async () => {
+  const h = await started();
+  for (let i = 0; i < 10; i += 1) {
+    await h.hide();
+    await h.settle();
+    await h.show();
+    await h.settle();
+  }
+  assert.ok(!h.logLines().some((line) => /Checking (paused|again)/.test(line)), h.logLines().join(' | '));
+  // what is logged is the contract's own change, once, for each fresh guard that finds it
+  assert.ok(h.logLines().length <= 0 || h.logLines().every((line) => line.startsWith('vault:')));
 });
