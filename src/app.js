@@ -283,13 +283,11 @@ export function createApp({
     depositButton.disabled = true;
     showBadge(PAUSED);
     setText(hint, 'Checking is paused while this tab is hidden.');
-    log('Checking paused: this tab is hidden.');
     if (previous !== undefined) await discard(previous);
   }
 
   async function resume() {
     if (!paused) return;
-    log('Checking again: this tab is visible.');
     await begin(currentProfile);
   }
 
