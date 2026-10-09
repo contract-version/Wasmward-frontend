@@ -110,3 +110,15 @@ test('the factory records each config and guard, in order, and runs the setup on
   assert.deepEqual(seen, [[0, { n: 1 }], [1, { n: 2 }]]);
   assert.notEqual(first, second);
 });
+
+test('failStop makes stop reject without marking the guard stopped, and failStop(undefined) makes it succeed again', async () => {
+  const guard = createFakeGuard();
+  await guard.start();
+  guard.failStop(new Error('would not stop'));
+  await assert.rejects(guard.stop(), /would not stop/);
+  assert.equal(guard.running, true, 'a stop that failed must not look like a stop that worked');
+  guard.failStop(undefined);
+  await guard.stop();
+  assert.equal(guard.running, false);
+  assert.equal(guard.calls.stop, 2);
+});

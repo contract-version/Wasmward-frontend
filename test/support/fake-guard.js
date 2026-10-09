@@ -23,6 +23,7 @@ export function createFakeGuard(config = undefined) {
   let startGate = Promise.resolve();
   let stopGate = Promise.resolve();
   let startError;
+  let stopError;
   let usingFallback = false;
 
   const effectiveStatus = () => effective ?? state.status;
@@ -42,6 +43,7 @@ export function createFakeGuard(config = undefined) {
     async stop() {
       fake.calls.stop += 1;
       await stopGate;
+      if (stopError !== undefined) throw stopError;
       fake.running = false;
     },
     status: () => ({ vault: { ...state } }),
@@ -92,6 +94,11 @@ export function createFakeGuard(config = undefined) {
     /** Makes start() reject with this error (or succeed again with undefined). */
     failStart(error) {
       startError = error;
+      return fake;
+    },
+    /** Makes stop() reject with this error (or succeed again with undefined). */
+    failStop(error) {
+      stopError = error;
       return fake;
     },
     useFallback(value = true) {
