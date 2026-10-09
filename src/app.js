@@ -40,6 +40,16 @@ export function createApp({
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
   const $ = (id) => document.getElementById(id);
+
+  // The page refreshes itself every second. Setting an element's text to what it already says still replaces its
+  // text node, and for a live region (the hint, the log) some screen readers read it out again. So write only what
+  // has changed.
+  function setText(element, text) {
+    if (element.textContent !== text) element.textContent = text;
+  }
+  function setClass(element, name) {
+    if (element.className !== name) element.className = name;
+  }
   const badge = $('badge');
   const depositButton = $('deposit');
   const hint = $('hint');
@@ -61,10 +71,11 @@ export function createApp({
   const hidden = () => document.visibilityState === 'hidden';
 
   function showBadge({ text, tone }) {
-    badge.textContent = text;
-    badge.className = `badge ${tone}`;
+    setText(badge, text);
+    setClass(badge, `badge ${tone}`);
     // The tab shows the status too: the one thing visible about a page in a background tab.
-    document.title = pageTitle({ text, tone });
+    const title = pageTitle({ text, tone });
+    if (document.title !== title) document.title = title;
   }
 
   // Something the page did not expect: from a bug, or a library. Left alone the page would just stop working with
@@ -123,26 +134,26 @@ export function createApp({
     // The effective status, which counts a check that is too old as stale: guard.status() would still say
     // "supported" while writes are already blocked.
     showBadge(statusView(guard.health().contracts.vault.status));
-    $('hash').textContent = state.liveWasmHash ?? 'unknown';
+    setText($('hash'), state.liveWasmHash ?? 'unknown');
     showSupported(state.liveWasmHash);
-    $('label').textContent = state.matchedLabel ?? 'none';
-    $('checked').textContent = ago(state.lastSuccessAt, now());
+    setText($('label'), state.matchedLabel ?? 'none');
+    setText($('checked'), ago(state.lastSuccessAt, now()));
 
     // A contract expires unless someone extends it, and its instance and Wasm code expire separately.
     const expiry = describeExpiry(state);
-    $('expiry').textContent = expiry.text;
-    $('expiry').className = expiry.warn ? 'warn' : '';
-    $('error').textContent = state.lastError ?? 'none';
+    setText($('expiry'), expiry.text);
+    setClass($('expiry'), expiry.warn ? 'warn' : '');
+    setText($('error'), state.lastError ?? 'none');
 
     // The point of the example: the button follows the guard.
     depositButton.disabled = !writable;
     if (writable) {
-      hint.textContent = 'The live code is one this app supports, so writes are allowed.';
+      setText(hint, 'The live code is one this app supports, so writes are allowed.');
     } else {
       try {
         guard.assertWritable('vault');
       } catch (error) {
-        hint.textContent = error.message;
+        setText(hint, error.message);
       }
     }
   }
@@ -183,7 +194,7 @@ export function createApp({
     } catch (error) {
       // Nothing to watch with: say so, rather than leave a page that has quietly stopped working.
       showBadge(CANNOT_CHECK);
-      hint.textContent = error.message;
+      setText(hint, error.message);
       log(`Could not start: ${error.message}`);
       return;
     }
@@ -191,7 +202,7 @@ export function createApp({
     deposit = next.guard('vault', async (amount) => `Pretended to send a transaction depositing ${amount}.`);
 
     showBadge(CHECKING);
-    hint.textContent = 'Checking which code the contract is running…';
+    setText(hint, 'Checking which code the contract is running…');
 
     next.subscribe((change) => {
       if (guard !== next) return; // a guard that has been replaced must not touch the page
@@ -210,13 +221,13 @@ export function createApp({
         startProblem = true;
         showBadge(CANNOT_CHECK);
         if (isPermanent(error)) {
-          hint.textContent = error.message;
+          setText(hint, error.message);
           log(`Could not start: ${error.message}`);
           return;
         }
         retries += 1;
         const delay = retryDelayMs(retries);
-        hint.textContent = `${error.message} (trying again in ${describeDelay(delay)})`;
+        setText(hint, `${error.message} (trying again in ${describeDelay(delay)})`);
         if (retries === 1) log(`Could not start: ${error.message} (will keep trying)`);
         await wait(delay);
         if (guard !== next) return;
@@ -243,7 +254,7 @@ export function createApp({
     startProblem = false;
     depositButton.disabled = true;
     showBadge(PAUSED);
-    hint.textContent = 'Checking is paused while this tab is hidden.';
+    setText(hint, 'Checking is paused while this tab is hidden.');
     log('Checking paused: this tab is hidden.');
     if (previous !== undefined) await discard(previous);
   }
@@ -302,7 +313,7 @@ export function createApp({
     // A link can name the build to open on (#build=older). Anything else in the fragment is ignored.
     const initialProfile = profileFromHash(location.hash, profileNames) ?? DEFAULT_PROFILE;
     $('profile').value = initialProfile;
-    $('network').textContent = describeNetwork(network.passphrase, network.rpcUrl);
+    setText($('network'), describeNetwork(network.passphrase, network.rpcUrl));
     $('explorer').href = explorerUrl(contractId);
     $('explorer').hidden = false;
     depositButton.addEventListener('click', onDeposit);
