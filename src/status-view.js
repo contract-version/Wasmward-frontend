@@ -19,3 +19,6 @@ export const CHECKING = { text: 'checking', tone: 'waiting' };
 
 /** Shown when the guard could not start at all, for example because the RPC serves a different network. */
 export const CANNOT_CHECK = { text: 'cannot check', tone: 'blocked' };
+
+/** Shown while the page is in a background tab and is not checking at all. */
+export const PAUSED = { text: 'paused', tone: 'waiting' };

@@ -2,7 +2,7 @@ import { describeExpiry } from './expiry.js';
 import { ago } from './format.js';
 import { explorerUrl } from './links.js';
 import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
-import { CANNOT_CHECK, CHECKING, statusView } from './status-view.js';
+import { CANNOT_CHECK, CHECKING, PAUSED, statusView } from './status-view.js';
 
 /** The most entries the "Changes" log keeps. A page can stay open for days; older entries are dropped. */
 export const LOG_LIMIT = 100;
@@ -39,6 +39,11 @@ export function createApp({
   // once-a-second refresh must leave that alone: the guard exists but has checked nothing, so a normal render would
   // replace the explanation with "pending".
   let startProblem = false;
+  // The build being watched, and whether checking is paused because the tab is in the background. A hidden tab
+  // would otherwise poll the RPC every few seconds for as long as it stays open.
+  let currentProfile;
+  let paused = false;
+  const hidden = () => document.visibilityState === 'hidden';
 
   function showBadge({ text, tone }) {
     badge.textContent = text;
@@ -56,7 +61,7 @@ export function createApp({
   }
 
   function render() {
-    if (guard === undefined || startProblem) return;
+    if (guard === undefined || startProblem || hidden()) return;
     const state = guard.status().vault;
     const writable = guard.isWritable('vault');
 
@@ -102,6 +107,8 @@ export function createApp({
   }
 
   async function begin(profile) {
+    currentProfile = profile;
+    paused = false;
     const mine = ++latestChoice;
     const previous = guard;
     guard = undefined;
@@ -166,6 +173,32 @@ export function createApp({
     render();
   }
 
+  // Leaving the tab: stop the guard (so nothing polls in the background) and cancel any start or retry in progress.
+  async function pause() {
+    if (paused) return;
+    paused = true;
+    latestChoice += 1; // a begin() still running sees it has been replaced and gives up
+    const previous = guard;
+    guard = undefined;
+    deposit = undefined;
+    startProblem = false;
+    depositButton.disabled = true;
+    showBadge(PAUSED);
+    hint.textContent = 'Checking is paused while this tab is hidden.';
+    log('Checking paused: this tab is hidden.');
+    if (previous !== undefined) await discard(previous);
+  }
+
+  async function resume() {
+    if (!paused) return;
+    log('Checking again: this tab is visible.');
+    await begin(currentProfile);
+  }
+
+  function onVisibilityChange() {
+    void (hidden() ? pause() : resume());
+  }
+
   async function onDeposit() {
     if (deposit === undefined) {
       // Between one choice of build and the next there is no guard to send a write through.
@@ -197,8 +230,12 @@ export function createApp({
     $('explorer').hidden = false;
     depositButton.addEventListener('click', onDeposit);
     $('profile').addEventListener('change', onProfileChange);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     // Keep "last check" fresh between polls.
     setInterval(render, 1000);
+    currentProfile = initialProfile;
+    // A page opened in a background tab waits until it is shown before it starts checking.
+    if (hidden()) return pause();
     return begin(initialProfile);
   }
 
