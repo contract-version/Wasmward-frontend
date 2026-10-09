@@ -188,3 +188,14 @@ test('a guard that cannot start puts that in the title too', async () => {
   await h.run();
   assert.equal(h.doc.title, 'cannot check · Wasmward browser example');
 });
+
+test('each log time carries the exact moment as a datetime, so it means something to software and to a screen reader', async () => {
+  const h = await started({ status: 'pending' });
+  await h.guard.emit('pending', 'supported');
+  h.advance(65_000);
+  await h.guard.emit('supported', 'stale');
+  const [newest, oldest] = h.el('log').children.map((item) => item.children[0]);
+  assert.equal(oldest.getAttribute('datetime'), new Date(START).toISOString());
+  assert.equal(newest.getAttribute('datetime'), new Date(START + 65_000).toISOString());
+  assert.match(oldest.getAttribute('datetime'), /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+});
