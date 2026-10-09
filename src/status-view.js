@@ -22,3 +22,15 @@ export const CANNOT_CHECK = { text: 'cannot check', tone: 'blocked' };
 
 /** Shown while the page is in a background tab and is not checking at all. */
 export const PAUSED = { text: 'paused', tone: 'waiting' };
+
+/** The page's name, as in the <title> of index.html. */
+export const BASE_TITLE = 'Wasmward browser example';
+
+/**
+ * The tab title for a status view: the status first, then the page name, so a tab in the background shows
+ * "supported · Wasmward browser example" and is readable even when the tab is narrow.
+ */
+export function pageTitle(view) {
+  const text = typeof view?.text === 'string' ? view.text.trim() : '';
+  return text === '' ? BASE_TITLE : `${text} · ${BASE_TITLE}`;
+}
