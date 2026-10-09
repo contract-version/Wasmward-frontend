@@ -2,7 +2,7 @@
 
 A small web page that uses [Wasmward](https://github.com/contract-version/Wasmward-backend) in the browser. It watches a contract on Stellar testnet and **turns a write button off whenever the code the contract is running is not one this app supports.**
 
-It is the "disable write buttons with `subscribe`" example from Wasmward's docs, and it needs no framework: one HTML file, one JavaScript file, and a build step.
+It is the "disable write buttons with `subscribe`" example from Wasmward's docs, and it needs no framework: one HTML file, a few small JavaScript modules, and a build step.
 
 ## What you will see
 
@@ -15,7 +15,21 @@ It is the "disable write buttons with `subscribe`" example from Wasmward's docs,
   ```
 
   That is what a user of an out-of-date app would see after a contract upgrade, instead of a failed or wrongly interpreted transaction.
-- A log of every status change.
+- A **log** of the contract's status changes, newest first (the last 100 are kept).
+- Which **network** and RPC host the page watches, and a **list of the builds this app supports**, with the one the contract is running marked "running now" in words, so you can see what the live code was compared with.
+- A **Copy** button for the live Wasm hash (the whole hash, not the shortened one).
+- The **tab title** carries the status ("supported · Wasmward browser example"), so a page in a background tab can be read at a glance.
+- A **theme** choice (follow the system, light or dark), remembered in the browser if it allows, and applied before the page is drawn so it does not flash.
+- A **shareable view**: the build you are looking at is in the address (`#build=older`), so a link can open on it. Anything else in the fragment is ignored.
+
+## When things go wrong
+
+The page is meant to say so, not to go quiet:
+
+- **The first check cannot start** (offline for a moment, a slow RPC): the badge says "cannot check", the hint says why and when it will try again (2 seconds, then twice as long each time, up to 30), and it keeps trying. **Try again now** (or the browser coming back online) ends the wait at once. A problem retrying cannot fix, such as an RPC that serves another network, is shown once and not retried.
+- **The tab is in the background**: checking pauses (nothing polls the RPC) and starts again, at once, when the tab is shown. A page opened in a background tab waits until it is shown.
+- **Something unexpected throws**: an uncaught error or an unhandled rejection shows a notice, as text, saying what happened and to reload, and is logged.
+- **A check gets too old**: the badge reads `stale` (it follows `guard.health()`, which counts an old check as stale), and the button stays off.
 
 ## Run it
 
@@ -48,7 +62,21 @@ The page talks to the public testnet RPC (`https://soroban-testnet.stellar.org`)
 
 ## How it works
 
-All of the Wasmward code is in [`src/main.js`](src/main.js):
+The page's behaviour is `createApp` in [`src/app.js`](src/app.js). It takes everything it touches as an argument (the document, a function that makes a guard, the clock, the clipboard, storage, the address), so the tests run the real behaviour against a fake DOM and a fake guard, with no browser. [`src/main.js`](src/main.js) only wires in the real ones. The rest of `src/` is small and pure:
+
+| File | What it holds |
+|---|---|
+| [`demo-config.js`](src/demo-config.js) | The contract, the hashes, and the pretend releases of the app. |
+| [`status-view.js`](src/status-view.js) | How a status is shown: the badge, the tab title. |
+| [`format.js`](src/format.js) | "5 seconds ago", the network row, the supported list, short hashes. |
+| [`expiry.js`](src/expiry.js) | The "Time left" row. |
+| [`retry.js`](src/retry.js) | How long to wait between retries, and which errors are worth one. |
+| [`route.js`](src/route.js) | Reading and writing `#build=...`, strictly. |
+| [`clipboard.js`](src/clipboard.js) | Copying, and every way it can end. |
+| [`theme.js`](src/theme.js), [`theme-init.js`](src/theme-init.js) | The theme choice, and the tiny script that applies it from `<head>`. |
+| [`links.js`](src/links.js) | The explorer link, built only from a valid contract address. |
+
+The Wasmward part, simplified:
 
 ```js
 import { createVersionGuard, loadConfig } from '@wasmward/core';
