@@ -174,3 +174,39 @@ test('requestedPath decodes, drops the query and refuses what is malformed', () 
   assert.equal(requestedPath(undefined), undefined);
   assert.equal(requestedPath(''), undefined);
 });
+
+test('only GET and HEAD are allowed: anything else is a 405 that says what is', async () => {
+  for (const method of ['POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']) {
+    const res = await get('/index.html', { method });
+    assert.equal(res.status, 405, method);
+    assert.equal(res.headers.allow, 'GET, HEAD', method);
+    assert.equal(res.body, 'Method not allowed', method);
+  }
+});
+
+test('HEAD gives the headers of a GET and no body, for a file and for a miss', async () => {
+  const get200 = await get('/dist/app.js');
+  const head200 = await get('/dist/app.js', { method: 'HEAD' });
+  assert.equal(head200.status, 200);
+  assert.equal(head200.body, '');
+  assert.equal(head200.headers['content-type'], get200.headers['content-type']);
+  assert.equal(head200.headers['content-length'], String(Buffer.byteLength('console.log(1)')));
+  const head404 = await get('/package.json', { method: 'HEAD' });
+  assert.equal(head404.status, 404);
+  assert.equal(head404.body, '');
+});
+
+test('every successful response says how long it is', async () => {
+  for (const [path, body] of [['/', '<!doctype html><title>demo</title>'], ['/dist/app.js', 'console.log(1)'], ['/dist/blob.bin', 'bytes']]) {
+    assert.equal((await get(path)).headers['content-length'], String(Buffer.byteLength(body)), path);
+  }
+});
+
+test('every response, errors included, is marked nosniff, no-referrer and not cacheable', async () => {
+  const responses = [await get('/'), await get('/dist/app.js'), await get('/package.json'), await get('/%E0%A4%A'), await get('/', { method: 'POST' })];
+  for (const res of responses) {
+    assert.equal(res.headers['x-content-type-options'], 'nosniff', String(res.status));
+    assert.equal(res.headers['referrer-policy'], 'no-referrer', String(res.status));
+    assert.equal(res.headers['cache-control'], 'no-cache', String(res.status));
+  }
+});
