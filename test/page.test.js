@@ -51,3 +51,17 @@ test('the note about a copy is a status region, so it is announced when it appea
   assert.ok(tag, 'index.html has no #copy-status');
   assert.match(tag, /\brole="status"/);
 });
+
+test('a small classic script in <head> applies the saved theme before the page is drawn', () => {
+  const head = html.slice(html.indexOf('<head>'), html.indexOf('</head>'));
+  const tag = head.match(/<script\b[^>]*\bsrc="\.\/dist\/theme-init\.js"[^>]*><\/script>/)?.[0];
+  assert.ok(tag, 'index.html has no theme-init script in <head>');
+  assert.doesNotMatch(tag, /type="module"|\bdefer\b|\basync\b/, 'it must run at once, before the first paint, so it is a plain blocking script');
+  assert.ok(head.indexOf(tag) < head.indexOf('<style>'), 'it must come before the stylesheet');
+});
+
+test('the big script is still a module, loaded after the page, so it does not block drawing', () => {
+  const tag = html.match(/<script\b[^>]*\bsrc="\.\/dist\/app\.js"[^>]*><\/script>/)?.[0];
+  assert.match(tag, /type="module"/);
+  assert.ok(html.indexOf(tag) > html.indexOf('</main>'));
+});

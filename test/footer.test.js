@@ -9,7 +9,7 @@ const links = footers.length === 1 ? [...footers[0][2].matchAll(/<a\b([^>]*)>([\
 test('the page has one footer, after the main content, which is the contentinfo landmark', () => {
   assert.equal(footers.length, 1);
   assert.ok(html.indexOf('</main>') < html.indexOf('<footer'), 'the footer must come after </main>');
-  assert.ok(html.indexOf('<footer') < html.indexOf('<script'), 'and before the script');
+  assert.ok(html.indexOf('<footer') < html.indexOf('<script type="module"'), 'and before the app script');
 });
 
 test('it links to the library, this page, the test contract and the operations guide', () => {
