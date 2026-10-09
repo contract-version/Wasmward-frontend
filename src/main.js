@@ -1,44 +1,23 @@
-import { createVersionGuard, loadConfig } from '@wasmward/core';
+import { createVersionGuard } from '@wasmward/core';
+import { CONTRACT_ID, configFor, PROFILE_NAMES } from './demo-config.js';
 import { describeExpiry } from './expiry.js';
 import { ago } from './format.js';
 import { explorerUrl } from './links.js';
 import { CANNOT_CHECK, CHECKING, statusView } from './status-view.js';
 
-// The Wasmward test contract on Stellar testnet, running its "v1" build.
-const CONTRACT_ID = 'CBR5ZFDI2GBXG66DAEWWHSAK4NDLKSKHWVUEUSOM4UOBM66TI6DYPDPV';
-const V1_HASH = 'a7a82511fa284650178b02fe3a4bafc587b95212f2f8ce647f2df5ef4cf42509';
-
-// Which Wasm builds each pretend release of this app was tested against.
-const PROFILES = {
-  current: [{ wasmHash: V1_HASH, label: 'v1' }],
-  older: [{ wasmHash: '0'.repeat(64), label: 'an earlier build' }],
-};
-
 const $ = (id) => document.getElementById(id);
 $('explorer').href = explorerUrl(CONTRACT_ID);
 $('explorer').hidden = false;
 const badge = $('badge');
-
-function showBadge({ text, tone }) {
-  badge.textContent = text;
-  badge.className = `badge ${tone}`;
-}
 const depositButton = $('deposit');
 const hint = $('hint');
 
 let guard;
 let deposit;
 
-function configFor(profile) {
-  return loadConfig({
-    version: 1,
-    network: {
-      rpcUrl: 'https://soroban-testnet.stellar.org',
-      passphrase: 'Test SDF Network ; September 2015',
-    },
-    pollIntervalMs: 10_000,
-    contracts: { vault: { contractId: CONTRACT_ID, supported: PROFILES[profile] } },
-  });
+function showBadge({ text, tone }) {
+  badge.textContent = text;
+  badge.className = `badge ${tone}`;
 }
 
 function log(text) {
@@ -135,7 +114,7 @@ depositButton.addEventListener('click', async () => {
 });
 
 $('profile').addEventListener('change', (event) => {
-  log(`Switched to ${event.target.value === 'current' ? 'the current' : 'an older'} build of the app.`);
+  log(`Switched to ${PROFILE_NAMES[event.target.value]} build of the app.`);
   void begin(event.target.value);
 });
 
