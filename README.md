@@ -6,7 +6,7 @@ It is the "disable write buttons with `subscribe`" example from Wasmward's docs,
 
 ## What you will see
 
-- The contract's status (`supported`, `unsupported`, `missing`, ...), the live Wasm hash, the label of the supported version it matched, and **how long the contract has left before it expires** (turning amber under about a week). That last row uses `ledgersUntilExpiry` and `describeTimeLeft` from the library and is informational: it never changes whether writes are allowed.
+- The contract's status (`supported`, `unsupported`, `missing`, ...), the live Wasm hash, the label of the supported version it matched, and **how long the contract has left before it expires** (turning amber under about a week). A contract runs from its instance and its Wasm code, which expire separately; the row shows the sooner of the two and says "(Wasm code)" when that is the one running out. It is built in `src/expiry.js` from `ledgersUntilExpiry`, `expiringEntry` and `describeTimeLeft` in the library, and is informational: it never changes whether writes are allowed. If either entry has expired the status becomes `archived` and the button turns off.
 - A **Deposit 10 (demo)** button that is enabled only while the guard says writes are allowed. Clicking it does not send a transaction; it shows what a guarded call looks like.
 - A switch that pretends this is an **older build of the app**, one that was never tested against the contract's current code. The status becomes `unsupported`, the button turns off, and the page shows the exact reason Wasmward gives:
 
@@ -30,7 +30,7 @@ cd Wasmward-frontend && pnpm install
 pnpm dev
 ```
 
-Then open <http://127.0.0.1:5173>. To keep the library somewhere else, set `WASMWARD_CORE_DIR` to that folder. `pnpm build` only builds; `pnpm serve` only serves.
+Then open <http://127.0.0.1:5173>. To keep the library somewhere else, set `WASMWARD_CORE_DIR` to that folder. `pnpm build` only builds; `pnpm serve` only serves; `pnpm test` runs the tests in `test/` (the page's display logic, run in Node against the real library).
 
 The page talks to the public testnet RPC (`https://soroban-testnet.stellar.org`) straight from your browser, so it needs network access. It uses the Wasmward test contract from [Wasmward-contract](https://github.com/contract-version/Wasmward-contract). If testnet is reset or that contract has expired, the status will read `missing`, and the button will stay off: the guard fails closed.
 
