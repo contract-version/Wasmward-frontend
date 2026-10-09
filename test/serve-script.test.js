@@ -80,3 +80,29 @@ test('serve.mjs starts on a free port and says where', async () => {
   });
   assert.equal(started, `Open http://127.0.0.1:${port}\n`);
 });
+
+test('serve.mjs prints one line for each request it answers', async () => {
+  const probe = createServer();
+  await new Promise((resolve) => probe.listen(0, '127.0.0.1', resolve));
+  const { port } = probe.address();
+  await new Promise((resolve) => probe.close(resolve));
+
+  const child = spawn(process.execPath, [SERVE], { cwd: ROOT, env: { ...process.env, PORT: String(port) } });
+  let stdout = '';
+  child.stdout.on('data', (chunk) => (stdout += chunk));
+  try {
+    for (let i = 0; i < 100 && !stdout.includes('Open http'); i += 1) await new Promise((resolve) => setTimeout(resolve, 50));
+    const get = (path) => fetch(`http://127.0.0.1:${port}${path}`).then((response) => response.text());
+    await get('/');
+    await get('/package.json');
+    await get('/?secret=hunter2');
+    for (let i = 0; i < 100 && stdout.split('\n').filter((line) => /^GET /.test(line)).length < 3; i += 1) await new Promise((resolve) => setTimeout(resolve, 50));
+  } finally {
+    child.kill();
+  }
+  const lines = stdout.split('\n').filter((line) => /^GET /.test(line));
+  assert.match(lines[0], /^GET \/ 200 \d+ms$/);
+  assert.match(lines[1], /^GET \/package\.json 404 \d+ms$/);
+  assert.match(lines[2], /^GET \/ 200 \d+ms$/);
+  assert.ok(!stdout.includes('hunter2'), 'a query string was written to the log');
+});
