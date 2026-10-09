@@ -46,3 +46,23 @@ test('paused is waiting-toned, so a hidden tab never looks like a verdict on the
   const { PAUSED } = await import('../src/status-view.js');
   assert.deepEqual(PAUSED, { text: 'paused', tone: 'waiting' });
 });
+
+test('the tab title puts the status first, so it can be read on a small tab, then the page name', async () => {
+  const { pageTitle, BASE_TITLE } = await import('../src/status-view.js');
+  assert.equal(BASE_TITLE, 'Wasmward browser example');
+  assert.equal(pageTitle({ text: 'supported', tone: 'supported' }), 'supported · Wasmward browser example');
+  assert.equal(pageTitle({ text: 'cannot check', tone: 'blocked' }), 'cannot check · Wasmward browser example');
+  assert.equal(pageTitle(CHECKING), 'checking · Wasmward browser example');
+});
+
+test('the tab title falls back to the page name alone when there is no status text', async () => {
+  const { pageTitle, BASE_TITLE } = await import('../src/status-view.js');
+  for (const empty of [undefined, null, {}, { text: '' }, { text: '   ' }]) assert.equal(pageTitle(empty), BASE_TITLE, JSON.stringify(empty));
+});
+
+test('the base title is the one in index.html', async () => {
+  const { BASE_TITLE } = await import('../src/status-view.js');
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, new RegExp(`<title>${BASE_TITLE}</title>`));
+});
