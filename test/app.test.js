@@ -165,3 +165,26 @@ test('the network row is there before the first check finishes, and does not cha
   await h.guard.emit('pending', 'unsupported');
   assert.equal(h.text('network'), 'Stellar testnet (soroban-testnet.stellar.org)');
 });
+
+test('the tab title follows the badge, so a page in a background tab can be read at a glance', async () => {
+  let release;
+  const h = harness({ setup: (guard) => { guard.set(SUPPORTED); release = guard.holdStart(); } });
+  const running = h.run();
+  await h.settle();
+  assert.equal(h.doc.title, 'checking · Wasmward browser example');
+  release();
+  await running;
+  assert.equal(h.doc.title, 'supported · Wasmward browser example');
+  h.guard.set({ effective: 'stale' });
+  h.tick();
+  assert.equal(h.doc.title, 'stale · Wasmward browser example');
+  await h.hide();
+  await h.settle();
+  assert.equal(h.doc.title, 'paused · Wasmward browser example');
+});
+
+test('a guard that cannot start puts that in the title too', async () => {
+  const h = harness({ setup: (guard) => guard.failStart(new ConfigError('another network')) });
+  await h.run();
+  assert.equal(h.doc.title, 'cannot check · Wasmward browser example');
+});
