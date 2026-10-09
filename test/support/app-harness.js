@@ -42,6 +42,19 @@ export function harness(options = {}) {
       clipboard.written.push(text);
     },
   };
+  // Where the theme choice is kept: `h.storage.data`, or `h.storage.throws = true` for a browser that refuses.
+  const storage = {
+    data: new Map(),
+    throws: false,
+    getItem(key) {
+      if (storage.throws) throw new DOMException('The operation is insecure.', 'SecurityError');
+      return storage.data.has(key) ? storage.data.get(key) : null;
+    },
+    setItem(key, value) {
+      if (storage.throws) throw new DOMException('The operation is insecure.', 'SecurityError');
+      storage.data.set(key, String(value));
+    },
+  };
   const location = { pathname: '/', search: '', hash: '' };
   const history = {
     calls: [],
@@ -63,6 +76,7 @@ export function harness(options = {}) {
     location,
     history,
     clipboard: 'clipboard' in options ? options.clipboard : clipboard,
+    storage: 'storage' in options ? options.storage : storage,
     now: () => time,
     wait: (ms) => new Promise((resolve) => waits.push({ ms, resolve })),
   });
@@ -76,6 +90,7 @@ export function harness(options = {}) {
     location,
     history,
     clipboard,
+    storage,
     guards: factory.guards,
     get guard() {
       return factory.guards.at(-1);

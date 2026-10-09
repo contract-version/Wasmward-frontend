@@ -43,6 +43,7 @@ test('a profile that does not exist is refused, including names inherited from O
 
 test('every <option> in the page is a profile, and every profile has an option', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  const options = [...html.matchAll(/<option\s+value="([^"]+)"/g)].map((match) => match[1]);
+  const select = html.match(/<select\b[^>]*\bid="profile"[^>]*>([\s\S]*?)<\/select>/)[1];
+  const options = [...select.matchAll(/<option\s+value="([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(options.sort(), Object.keys(PROFILES).sort());
 });
