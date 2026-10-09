@@ -75,6 +75,17 @@ export function createApp({
   // once-a-second refresh must leave that alone: the guard exists but has checked nothing, so a normal render would
   // replace the explanation with "pending".
   let startProblem = false;
+  // While the page waits before trying to start again, this ends the wait at once (the "Try again now" button, or the
+  // browser saying it is back online). It is undefined at every other time, so pressing the button then does nothing.
+  let wakeRetry;
+  const offerRetry = (offered) => {
+    $('retry-now').hidden = !offered;
+  };
+  function waitOrWake(ms) {
+    return Promise.race([wait(ms), new Promise((resolve) => (wakeRetry = resolve))]).finally(() => {
+      wakeRetry = undefined;
+    });
+  }
   // The build being watched, and whether checking is paused because the tab is in the background. A hidden tab
   // would otherwise poll the RPC every few seconds for as long as it stays open.
   let currentProfile;
@@ -223,6 +234,7 @@ export function createApp({
     guard = undefined;
     deposit = undefined;
     startProblem = false;
+    offerRetry(false);
     depositButton.disabled = true;
     if (previous !== undefined) await discard(previous);
     if (mine !== latestChoice) return; // a newer choice arrived while the old guard was stopping
@@ -271,7 +283,9 @@ export function createApp({
         const delay = retryDelayMs(retries);
         setText(hint, `${error.message} (trying again in ${describeDelay(delay)})`);
         if (retries === 1) log(`Could not start: ${error.message} (will keep trying)`);
-        await wait(delay);
+        offerRetry(true);
+        await waitOrWake(delay);
+        offerRetry(false);
         if (guard !== next) return;
       }
     }
@@ -294,6 +308,7 @@ export function createApp({
     guard = undefined;
     deposit = undefined;
     startProblem = false;
+    offerRetry(false);
     depositButton.disabled = true;
     showBadge(PAUSED);
     setText(hint, 'Checking is paused while this tab is hidden.');
@@ -375,6 +390,8 @@ export function createApp({
     $('theme').addEventListener('change', onThemeChange);
     depositButton.addEventListener('click', onDeposit);
     $('copy-hash').addEventListener('click', onCopy);
+    $('retry-now').addEventListener('click', () => wakeRetry?.());
+    events.addEventListener('online', () => wakeRetry?.());
     $('profile').addEventListener('change', onProfileChange);
     document.addEventListener('visibilitychange', onVisibilityChange);
     events.addEventListener('error', (event) => showUnexpected(event.error ?? event.message));
