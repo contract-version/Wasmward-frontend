@@ -4,6 +4,14 @@
   "private": true,
   "description": "A browser page that uses Wasmward to disable a write button when a contract's live code is not supported.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/contract-version/Wasmward-frontend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/contract-version/Wasmward-frontend/issues"
+  },
+  "homepage": "https://github.com/contract-version/Wasmward-frontend#readme",
   "type": "module",
   "packageManager": "pnpm@10.30.1",
   "engines": {
