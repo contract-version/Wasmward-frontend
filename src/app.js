@@ -15,6 +15,7 @@ export const LOG_LIMIT = 100;
  *   contractId   the contract being watched, for the explorer link
  *   profileNames how each release is named in the log
  *   network      { passphrase, rpcUrl } of the network watched, for the "Network" row
+ *   events       where uncaught errors and unhandled rejections arrive (the window)
  *   now          the clock, in milliseconds since the epoch
  *   wait         waits this many milliseconds, for the pause between retries
  *
@@ -27,6 +28,7 @@ export function createApp({
   contractId,
   profileNames,
   network,
+  events = globalThis,
   now = Date.now,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
@@ -54,6 +56,17 @@ export function createApp({
   function showBadge({ text, tone }) {
     badge.textContent = text;
     badge.className = `badge ${tone}`;
+  }
+
+  // Something the page did not expect: from a bug, or a library. Left alone the page would just stop working with
+  // nothing to say so, so say so, and what to do. The latest is shown; every one is logged.
+  function showUnexpected(reason) {
+    const raw = reason instanceof Error ? reason.message : reason?.message ?? (reason === undefined ? '' : String(reason));
+    const message = raw.replace(/\.+$/, '') || 'an unknown error';
+    log(`Unexpected error: ${message}`);
+    const notice = $('problem');
+    notice.textContent = `Something went wrong: ${message}. Reload the page to start again.`;
+    notice.hidden = false;
   }
 
   function showSupported(liveHash) {
@@ -269,6 +282,8 @@ export function createApp({
     depositButton.addEventListener('click', onDeposit);
     $('profile').addEventListener('change', onProfileChange);
     document.addEventListener('visibilitychange', onVisibilityChange);
+    events.addEventListener('error', (event) => showUnexpected(event.error ?? event.message));
+    events.addEventListener('unhandledrejection', (event) => showUnexpected(event.reason));
     // Keep "last check" fresh between polls.
     setInterval(render, 1000);
     currentProfile = initialProfile;
