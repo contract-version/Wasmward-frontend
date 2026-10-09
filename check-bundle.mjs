@@ -8,7 +8,8 @@
 //
 // Exit codes: 0 fine, 1 a problem (each is printed), 2 the file could not be read or an option is wrong.
 import { readFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { basename } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 export const DEFAULT_MAX_BYTES = 1_500_000;
@@ -79,6 +80,9 @@ function main(argv) {
   return problems.length === 0 ? 0 : 1;
 }
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Run only when this file is the script being executed. The file-name check matters: the tests bundle this module
+// into a test file, where import.meta.url and process.argv[1] are both that test file and the first check alone
+// would run main() on import.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href && basename(fileURLToPath(import.meta.url)) === 'check-bundle.mjs') {
   process.exitCode = main(process.argv.slice(2));
 }

@@ -7,7 +7,8 @@
 // leave the page unstyled in a browser. test/csp.test.js also fails when they differ.
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { basename } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /** The policy text of the CSP meta tag in `html`, and the match that holds it. Throws if there is not exactly one. */
 function policyIn(html) {
@@ -61,6 +62,9 @@ function main(argv) {
   return 0;
 }
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Run only when this file is the script being executed. The file-name check matters: the tests bundle this module
+// into a test file, where import.meta.url and process.argv[1] are both that test file and the first check alone
+// would run main() on import, which could rewrite index.html in the middle of a test run.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href && basename(fileURLToPath(import.meta.url)) === 'update-csp.mjs') {
   process.exitCode = main(process.argv.slice(2));
 }
