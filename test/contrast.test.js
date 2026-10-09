@@ -15,7 +15,9 @@ function variables(block) {
 }
 
 const lightBlock = css.match(/:root\s*\{([^}]*)\}/)[1];
-const darkBlock = css.match(/@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root\s*\{([^}]*)\}/)[1];
+// The dark palette appears twice in the stylesheet (for a system set to dark, and for dark chosen on the page);
+// theme-css.test.js checks that the two are identical, so reading either is reading both.
+const darkBlock = css.match(/:root\[data-theme="dark"\]\s*\{([^}]*)\}/)[1];
 const themes = { light: variables(lightBlock), dark: { ...variables(lightBlock), ...variables(darkBlock) } };
 
 /** '#rgb' or '#rrggbb' as [r, g, b] in 0 to 255. */
