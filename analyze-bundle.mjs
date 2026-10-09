@@ -29,8 +29,12 @@ export function packageOf(path) {
 /** { total, files, rows: [{ name, bytes, share, files }] } for the JavaScript output of a metafile, biggest first. */
 export function breakdown(metafile) {
   if (typeof metafile !== 'object' || metafile === null) throw new Error('this is not an esbuild metafile');
-  // The output that is JavaScript, not its source map (which is listed as an output with no inputs).
-  const entry = Object.entries(metafile.outputs ?? {}).find(([name]) => name.endsWith('.js'));
+  // The JavaScript output, not a source map (an output with no inputs). The build makes more than one script (the app
+  // and a tiny one that sets the theme), so take the biggest, which is the app.
+  const size = ([, output]) => Object.values(output.inputs ?? {}).reduce((sum, input) => sum + input.bytesInOutput, 0);
+  const entry = Object.entries(metafile.outputs ?? {})
+    .filter(([name]) => name.endsWith('.js'))
+    .sort((a, b) => size(b) - size(a))[0];
   if (entry === undefined) throw new Error('the metafile has no JavaScript output');
   const inputs = Object.entries(entry[1].inputs ?? {});
 
