@@ -52,3 +52,22 @@ test('the package manager is pinned, and the README tells people to use it', () 
 test('there is a description, and it says what the page does', () => {
   assert.match(pkg.description, /write button/i);
 });
+
+test('.nvmrc names the newest Node version CI runs, and it is not older than the package requires', () => {
+  const nvmrc = Number(read('.nvmrc').trim());
+  const matrix = [...ci.matchAll(/node:\s*\[([^\]]*)\]/g)][0][1].split(',').map((n) => Number(n.trim()));
+  assert.equal(nvmrc, Math.max(...matrix));
+  assert.ok(nvmrc >= Number(pkg.engines.node.match(/>=\s*(\d+)/)[1]));
+});
+
+test('no source file has a tab, a carriage return or trailing spaces, as .editorconfig says', async () => {
+  const { readdirSync } = await import('node:fs');
+  const files = ['index.html', 'build.mjs', 'serve.mjs', 'static-server.mjs', 'check-bundle.mjs', 'analyze-bundle.mjs', 'update-csp.mjs', ...readdirSync(new URL('../src/', import.meta.url)).map((name) => `src/${name}`)];
+  for (const file of files) {
+    const text = read(file);
+    assert.doesNotMatch(text, /\t/, `${file} has a tab`);
+    assert.doesNotMatch(text, /\r/, `${file} has a carriage return`);
+    assert.doesNotMatch(text, /[ ]+\n/, `${file} has trailing spaces`);
+    assert.ok(text.endsWith('\n') && !text.endsWith('\n\n'), `${file} must end with exactly one newline`);
+  }
+});
