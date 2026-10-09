@@ -28,23 +28,55 @@ export function requestedPath(target) {
   return path.includes('\0') ? undefined : path;
 }
 
+/**
+ * Headers on every response, errors included. nosniff stops a browser from guessing a type other than the one
+ * sent; no-referrer keeps the address of this page out of requests it makes; no-cache means a rebuilt bundle is
+ * what the next reload shows (this is a development server).
+ */
+const COMMON_HEADERS = {
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'no-referrer',
+  'cache-control': 'no-cache',
+};
+
+/** Sends a short plain-text answer. A HEAD request gets the headers and no body. */
+function sendText(req, res, status, text, extra = {}) {
+  const body = Buffer.from(text);
+  res.writeHead(status, {
+    ...COMMON_HEADERS,
+    ...extra,
+    'content-type': 'text/plain; charset=utf-8',
+    'content-length': body.length,
+  });
+  res.end(req.method === 'HEAD' ? undefined : body);
+}
+
 /** An http.Server (not yet listening) that serves `root`/index.html and `root`/dist/. */
 export function createStaticServer({ root }) {
   const base = resolve(root);
   return createServer((req, res) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      sendText(req, res, 405, 'Method not allowed', { allow: 'GET, HEAD' });
+      return;
+    }
     const path = requestedPath(req.url);
     if (path === undefined) {
-      res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' }).end('Bad request');
+      sendText(req, res, 400, 'Bad request');
       return;
     }
     const file = resolve(join(base, normalize(path === '/' ? 'index.html' : path)));
     // Serve only index.html and the build output, never the rest of the project.
     const allowed = file === join(base, 'index.html') || file.startsWith(join(base, 'dist') + sep);
     if (!allowed || !existsSync(file) || !statSync(file).isFile()) {
-      res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Not found');
+      sendText(req, res, 404, 'Not found');
       return;
     }
-    res.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' });
-    createReadStream(file).pipe(res);
+    res.writeHead(200, {
+      ...COMMON_HEADERS,
+      'content-type': types[extname(file)] ?? 'application/octet-stream',
+      'content-length': statSync(file).size,
+    });
+    if (req.method === 'HEAD') res.end();
+    else createReadStream(file).pipe(res);
   });
 }
