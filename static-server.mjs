@@ -61,10 +61,29 @@ function sendText(req, res, status, text, extra = {}) {
   res.end(req.method === 'HEAD' ? undefined : body);
 }
 
-/** An http.Server (not yet listening) that serves `root`/index.html and `root`/dist/. */
-export function createStaticServer({ root }) {
+/**
+ * One request as a line of text: "GET /dist/app.js 200 3ms". Control characters in the path are written out as
+ * escapes, so a path cannot start a new line and pass itself off as another request.
+ */
+export function formatRequest({ method, path, status, ms }) {
+  const safePath = path.replace(/[\u0000-\u001f\u007f]/g, (char) => (char === '\n' ? '\\n' : char === '\r' ? '\\r' : `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`));
+  return `${method} ${safePath} ${status} ${ms}ms`;
+}
+
+/**
+ * An http.Server (not yet listening) that serves `root`/index.html and `root`/dist/. If `log` is given it is called
+ * once per request, when the response ends, with { method, path, status, ms }. The path is as it was sent, without
+ * the query string or fragment, which can carry things that should not be written down.
+ */
+export function createStaticServer({ root, log }) {
   const base = resolve(root);
   return createServer((req, res) => {
+    if (log !== undefined) {
+      const started = Date.now();
+      res.on('finish', () => {
+        log({ method: req.method, path: (req.url ?? '').split(/[?#]/)[0], status: res.statusCode, ms: Date.now() - started });
+      });
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       sendText(req, res, 405, 'Method not allowed', { allow: 'GET, HEAD' });
       return;
