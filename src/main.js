@@ -1,5 +1,6 @@
 import { createVersionGuard, loadConfig } from '@wasmward/core';
 import { describeExpiry } from './expiry.js';
+import { explorerUrl } from './links.js';
 
 // The Wasmward test contract on Stellar testnet, running its "v1" build.
 const CONTRACT_ID = 'CBR5ZFDI2GBXG66DAEWWHSAK4NDLKSKHWVUEUSOM4UOBM66TI6DYPDPV';
@@ -12,6 +13,8 @@ const PROFILES = {
 };
 
 const $ = (id) => document.getElementById(id);
+$('explorer').href = explorerUrl(CONTRACT_ID);
+$('explorer').hidden = false;
 const badge = $('badge');
 const depositButton = $('deposit');
 const hint = $('hint');
