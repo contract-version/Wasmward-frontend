@@ -21,7 +21,7 @@ export const START = Date.parse('2026-10-09T12:00:00Z');
  *   h.logLines()       the log, newest first, without the time of day
  *   h.choose(profile)  does what a person does in the selector
  */
-export function harness({ setup = () => undefined } = {}) {
+export function harness({ setup = () => undefined, configFor: configForOverride = configFor } = {}) {
   const doc = documentFromHtml(html);
   const factory = fakeGuardFactory(setup);
   const timers = [];
@@ -29,7 +29,7 @@ export function harness({ setup = () => undefined } = {}) {
   const app = createApp({
     document: doc,
     createGuard: factory.createGuard,
-    configFor,
+    configFor: configForOverride,
     contractId: CONTRACT_ID,
     profileNames: PROFILE_NAMES,
     now: () => time,
