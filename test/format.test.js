@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ago } from '../src/format.js';
+import { ago, describeNetwork } from '../src/format.js';
 
 const NOW = 1_800_000_000_000;
 
@@ -45,4 +45,26 @@ test('then hours and days, each with its singular', () => {
   assert.equal(ago(NOW - 23 * 3_600_000, NOW), '23 hours ago');
   assert.equal(ago(NOW - 24 * 3_600_000, NOW), '1 day ago');
   assert.equal(ago(NOW - 3 * 24 * 3_600_000, NOW), '3 days ago');
+});
+
+
+test('a known network passphrase is named, with the host of the RPC', () => {
+  assert.equal(describeNetwork('Test SDF Network ; September 2015', 'https://soroban-testnet.stellar.org'), 'Stellar testnet (soroban-testnet.stellar.org)');
+  assert.equal(describeNetwork('Public Global Stellar Network ; September 2015', 'https://rpc.example.org/path'), 'Stellar mainnet (rpc.example.org)');
+  assert.equal(describeNetwork('Test SDF Future Network ; October 2022', 'https://rpc-futurenet.stellar.org'), 'Stellar futurenet (rpc-futurenet.stellar.org)');
+});
+
+test('an unknown passphrase is shown as it is, in quotes, not guessed at', () => {
+  assert.equal(describeNetwork('My Private Net ; 2026', 'http://localhost:8000/rpc'), 'a network called "My Private Net ; 2026" (localhost:8000)');
+});
+
+test('only the host of the RPC is shown: never a path, a query or credentials, which can carry an API key', () => {
+  const shown = describeNetwork('Test SDF Network ; September 2015', 'https://user:secret@rpc.example.org:8443/v1/KEY123?token=abc#frag');
+  assert.equal(shown, 'Stellar testnet (rpc.example.org:8443)');
+  for (const leaked of ['secret', 'KEY123', 'token', 'user', 'frag']) assert.ok(!shown.includes(leaked), leaked);
+});
+
+test('an RPC address that cannot be read is left out rather than shown raw', () => {
+  assert.equal(describeNetwork('Test SDF Network ; September 2015', 'not a url'), 'Stellar testnet');
+  assert.equal(describeNetwork('Test SDF Network ; September 2015', ''), 'Stellar testnet');
 });
