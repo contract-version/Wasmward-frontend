@@ -97,3 +97,46 @@ test('pressing deposit when there is no guard yet says so, instead of a TypeErro
   release();
   await h.settle();
 });
+
+test('if the old guard will not stop, the switch still goes ahead and the problem is logged', async (t) => {
+  const check = failOnUnhandledRejection(t);
+  const h = harness({
+    setup: (guard, index) => {
+      guard.set(SUPPORTED);
+      if (index === 0) guard.failStop(new Error('would not stop'));
+    },
+  });
+  await h.run();
+  await h.choose('older');
+  await h.settle();
+  await h.settle();
+  assert.equal(h.guards.length, 2, 'no new guard was made because the old one failed to stop');
+  assert.equal(h.guards[1].running, true);
+  assert.ok(h.logLines().some((line) => line === 'Could not stop the previous check: would not stop'), h.logLines().join(' | '));
+  assert.equal(h.text('badge'), 'supported', 'the page should show the new guard, not be stuck on checking');
+  await check();
+});
+
+test('if a guard that was replaced while starting will not stop either, nothing is thrown', async (t) => {
+  const check = failOnUnhandledRejection(t);
+  let releaseStart;
+  const h = harness({
+    setup: (guard, index) => {
+      guard.set(SUPPORTED);
+      if (index === 1) {
+        releaseStart = guard.holdStart();
+        guard.failStop(new Error('late stop failure'));
+      }
+    },
+  });
+  await h.run();
+  await h.choose('older');
+  await h.settle();
+  await h.choose('current');
+  await h.settle();
+  releaseStart();
+  await h.settle();
+  await h.settle();
+  assert.equal(h.guard.running, true, 'the newest guard must keep running');
+  await check();
+});
