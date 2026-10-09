@@ -40,3 +40,25 @@ export function describeNetwork(passphrase, rpcUrl) {
   }
   return host === '' ? name : `${name} (${host})`;
 }
+
+/**
+ * A long hash as its first and last 8 characters ("a7a82511…4cf42509"), enough to recognise it. Anything that is
+ * not text gives an empty string, and a value of 16 characters or fewer is left whole.
+ */
+export function shortHash(hash) {
+  if (typeof hash !== 'string') return '';
+  return hash.length <= 16 ? hash : `${hash.slice(0, 8)}…${hash.slice(-8)}`;
+}
+
+/**
+ * The rows of the "What this build supports" list: label, full hash, short hash, and whether that build is the one
+ * the contract is running now. `supported` is the config's list; `liveHash` is what the guard last saw, if anything.
+ */
+export function describeSupported(supported, liveHash) {
+  return (supported ?? []).map((version) => ({
+    label: version.label ?? 'unlabelled',
+    hash: version.wasmHash,
+    short: shortHash(version.wasmHash),
+    live: liveHash !== undefined && version.wasmHash === liveHash,
+  }));
+}
