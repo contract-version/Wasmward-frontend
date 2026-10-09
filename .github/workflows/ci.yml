@@ -32,14 +32,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm build
+      # No Node-only modules in the browser bundle, and it stays within its size budget.
       - name: Check the bundle
-        run: |
-          test -s dist/app.js
-          # The browser bundle must not reach for Node-only modules.
-          if grep -E -o 'from ?"(node:)?(fs|path|os|child_process)"' dist/app.js; then
-            echo "dist/app.js imports a Node-only module" >&2
-            exit 1
-          fi
+        run: node check-bundle.mjs
+      # The stylesheet hash in the page's Content-Security-Policy must match the stylesheet.
+      - name: Check the policy hash is current
+        run: node update-csp.mjs --check
 
   # The demo is only as good as the contract it points at. This needs testnet, so it is its own job: a
   # testnet outage or an expiring contract fails this check without hiding whether the demo builds.
