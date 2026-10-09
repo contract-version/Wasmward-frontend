@@ -30,7 +30,7 @@ cd Wasmward-frontend && pnpm install
 pnpm dev
 ```
 
-Then open <http://127.0.0.1:5173>. To keep the library somewhere else, set `WASMWARD_CORE_DIR` to that folder. `pnpm build` only builds; `pnpm serve` only serves; `pnpm test` runs the tests in `test/` (the page's display logic, run in Node against the real library).
+Then open <http://127.0.0.1:5173>. To keep the library somewhere else, set `WASMWARD_CORE_DIR` to that folder. `pnpm build` only builds; `pnpm serve` only serves; `pnpm test` runs the tests in `test/` (the page's display logic, run in Node against the real library, plus a check that every element `main.js` looks up still exists in `index.html`, since a renamed id would otherwise kill the page on load without any build error). The contract row links to its page on stellar.expert; the link is only built from a valid contract address.
 
 The page talks to the public testnet RPC (`https://soroban-testnet.stellar.org`) straight from your browser, so it needs network access. It uses the Wasmward test contract from [Wasmward-contract](https://github.com/contract-version/Wasmward-contract). If testnet is reset or that contract has expired, the status will read `missing`, and the button will stay off: the guard fails closed.
 
