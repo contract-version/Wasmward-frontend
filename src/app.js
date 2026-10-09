@@ -5,6 +5,16 @@ import { explorerUrl } from './links.js';
 import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
 import { hashForProfile, profileFromHash } from './route.js';
 import { CANNOT_CHECK, CHECKING, PAUSED, pageTitle, statusView } from './status-view.js';
+import { applyTheme, readTheme, saveTheme, THEMES } from './theme.js';
+
+/** localStorage, or undefined: merely reading it throws in some browsers when site data is blocked. */
+function safeStorage() {
+  try {
+    return globalThis.localStorage;
+  } catch {
+    return undefined;
+  }
+}
 
 /** The build the page opens on when nothing else is asked for. */
 const DEFAULT_PROFILE = 'current';
@@ -23,6 +33,7 @@ export const LOG_LIMIT = 100;
  *   events       where uncaught errors, unhandled rejections and address changes arrive (the window)
  *   location     the address (for the #build=... fragment), and history to rewrite it
  *   clipboard    where "Copy" puts the live hash (`navigator.clipboard`)
+ *   storage      where the theme choice is kept (`localStorage`), if the browser allows it
  *   now          the clock, in milliseconds since the epoch
  *   wait         waits this many milliseconds, for the pause between retries
  *
@@ -39,6 +50,7 @@ export function createApp({
   location = globalThis.location,
   history = globalThis.history,
   clipboard = globalThis.navigator?.clipboard,
+  storage = safeStorage(),
   now = Date.now,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
@@ -326,6 +338,19 @@ export function createApp({
 
   // The fragment was changed by hand (or by following another link to this page). A blank one means the default;
   // one that names no build is ignored, as is one that says what is already shown.
+  // The theme: follow the system, or force light or dark. Remembered if the browser lets the page remember.
+  let theme = 'auto';
+  function onThemeChange(event) {
+    const chosen = event.target.value;
+    if (!THEMES.includes(chosen)) {
+      $('theme').value = theme; // not a theme: put the selector back, and change nothing
+      return;
+    }
+    theme = chosen;
+    applyTheme(document.documentElement, chosen);
+    saveTheme(storage, chosen); // remembered if the browser allows; the choice applies either way
+  }
+
   function onHashChange() {
     const named = profileFromHash(location.hash, profileNames);
     const blank = location.hash === '' || location.hash === '#';
@@ -344,6 +369,10 @@ export function createApp({
     setText($('network'), describeNetwork(network.passphrase, network.rpcUrl));
     $('explorer').href = explorerUrl(contractId);
     $('explorer').hidden = false;
+    theme = readTheme(storage);
+    $('theme').value = theme;
+    applyTheme(document.documentElement, theme);
+    $('theme').addEventListener('change', onThemeChange);
     depositButton.addEventListener('click', onDeposit);
     $('copy-hash').addEventListener('click', onCopy);
     $('profile').addEventListener('change', onProfileChange);
