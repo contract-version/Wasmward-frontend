@@ -109,3 +109,9 @@ test('every behaviour the README promises under "When things go wrong" has a tes
     assert.ok(tests.includes(file), `no ${file}`);
   }
 });
+
+test('the changelog exists, has an Unreleased section, and does not claim a release that was never made', () => {
+  const changelog = read('CHANGELOG.md');
+  assert.match(changelog, /^## Unreleased$/m);
+  assert.doesNotMatch(changelog, /^## \[?\d+\.\d+/m, 'a version heading, but package.json is private and unversioned');
+});
