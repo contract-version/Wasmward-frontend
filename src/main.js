@@ -2,6 +2,7 @@ import { createVersionGuard, loadConfig } from '@wasmward/core';
 import { describeExpiry } from './expiry.js';
 import { ago } from './format.js';
 import { explorerUrl } from './links.js';
+import { CANNOT_CHECK, CHECKING, statusView } from './status-view.js';
 
 // The Wasmward test contract on Stellar testnet, running its "v1" build.
 const CONTRACT_ID = 'CBR5ZFDI2GBXG66DAEWWHSAK4NDLKSKHWVUEUSOM4UOBM66TI6DYPDPV';
@@ -17,6 +18,11 @@ const $ = (id) => document.getElementById(id);
 $('explorer').href = explorerUrl(CONTRACT_ID);
 $('explorer').hidden = false;
 const badge = $('badge');
+
+function showBadge({ text, tone }) {
+  badge.textContent = text;
+  badge.className = `badge ${tone}`;
+}
 const depositButton = $('deposit');
 const hint = $('hint');
 
@@ -49,8 +55,9 @@ function render() {
   const state = guard.status().vault;
   const writable = guard.isWritable('vault');
 
-  badge.textContent = state.status;
-  badge.className = `badge ${writable ? 'supported' : state.status === 'pending' ? 'waiting' : 'blocked'}`;
+  // The effective status, which counts a check that is too old as stale: guard.status() would still say
+  // "supported" while writes are already blocked.
+  showBadge(statusView(guard.health().contracts.vault.status));
   $('hash').textContent = state.liveWasmHash ?? 'unknown';
   $('label').textContent = state.matchedLabel ?? 'none';
   $('checked').textContent = ago(state.lastSuccessAt, Date.now());
@@ -92,8 +99,7 @@ async function begin(profile) {
   guard = next;
   deposit = next.guard('vault', async (amount) => `Pretended to send a transaction depositing ${amount}.`);
 
-  badge.textContent = 'checking';
-  badge.className = 'badge waiting';
+  showBadge(CHECKING);
   hint.textContent = 'Checking which code the contract is running…';
 
   next.subscribe((change) => {
@@ -105,8 +111,7 @@ async function begin(profile) {
     await next.start();
   } catch (error) {
     if (guard === next) {
-      badge.textContent = 'cannot check';
-      badge.className = 'badge blocked';
+      showBadge(CANNOT_CHECK);
       hint.textContent = error.message;
       log(`Could not start: ${error.message}`);
     }
