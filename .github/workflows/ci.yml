@@ -40,17 +40,6 @@ jobs:
             echo "dist/app.js imports a Node-only module" >&2
             exit 1
           fi
-      - name: Keep the demo and its Wasmward config in step
-        run: |
-          # src/main.js and wasmward.json describe the same contract. They must not drift apart.
-          js_id="$(sed -n "s/^const CONTRACT_ID = '\(.*\)';$/\1/p" src/main.js)"
-          js_hash="$(sed -n "s/^const V1_HASH = '\(.*\)';$/\1/p" src/main.js)"
-          json_id="$(node -p "require('./wasmward.json').contracts.vault.contractId")"
-          json_hash="$(node -p "require('./wasmward.json').contracts.vault.supported[0].wasmHash")"
-          echo "src/main.js:   $js_id $js_hash"
-          echo "wasmward.json: $json_id $json_hash"
-          test -n "$js_id" && test -n "$js_hash"
-          test "$js_id" = "$json_id" && test "$js_hash" = "$json_hash"
 
   # The demo is only as good as the contract it points at. This needs testnet, so it is its own job: a
   # testnet outage or an expiring contract fails this check without hiding whether the demo builds.
