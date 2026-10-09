@@ -146,7 +146,9 @@ export function createApp({
   function log(text) {
     const item = document.createElement('li');
     const time = document.createElement('time');
-    time.textContent = new Date(now()).toLocaleTimeString();
+    const moment = new Date(now());
+    time.textContent = moment.toLocaleTimeString();
+    time.setAttribute('datetime', moment.toISOString());
     item.append(time, document.createTextNode(text));
     const list = $('log');
     list.prepend(item);
