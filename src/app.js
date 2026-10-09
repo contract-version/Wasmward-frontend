@@ -2,7 +2,11 @@ import { describeExpiry } from './expiry.js';
 import { ago, describeNetwork, describeSupported } from './format.js';
 import { explorerUrl } from './links.js';
 import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
+import { hashForProfile, profileFromHash } from './route.js';
 import { CANNOT_CHECK, CHECKING, PAUSED, pageTitle, statusView } from './status-view.js';
+
+/** The build the page opens on when nothing else is asked for. */
+const DEFAULT_PROFILE = 'current';
 
 /** The most entries the "Changes" log keeps. A page can stay open for days; older entries are dropped. */
 export const LOG_LIMIT = 100;
@@ -15,7 +19,8 @@ export const LOG_LIMIT = 100;
  *   contractId   the contract being watched, for the explorer link
  *   profileNames how each release is named in the log
  *   network      { passphrase, rpcUrl } of the network watched, for the "Network" row
- *   events       where uncaught errors and unhandled rejections arrive (the window)
+ *   events       where uncaught errors, unhandled rejections and address changes arrive (the window)
+ *   location     the address (for the #build=... fragment), and history to rewrite it
  *   now          the clock, in milliseconds since the epoch
  *   wait         waits this many milliseconds, for the pause between retries
  *
@@ -29,6 +34,8 @@ export function createApp({
   profileNames,
   network,
   events = globalThis,
+  location = globalThis.location,
+  history = globalThis.history,
   now = Date.now,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
@@ -272,12 +279,29 @@ export function createApp({
       log(`Ignored a choice of build the page does not know: '${profile}'`);
       return;
     }
+    // Record the choice in the address, so the link shows this view. replaceState: no history entry per change.
+    history.replaceState(null, '', location.pathname + location.search + hashForProfile(profile, DEFAULT_PROFILE));
     log(`Switched to ${profileNames[profile]} build of the app.`);
     void begin(profile);
   }
 
+  // The fragment was changed by hand (or by following another link to this page). A blank one means the default;
+  // one that names no build is ignored, as is one that says what is already shown.
+  function onHashChange() {
+    const named = profileFromHash(location.hash, profileNames);
+    const blank = location.hash === '' || location.hash === '#';
+    const wanted = named ?? (blank ? DEFAULT_PROFILE : undefined);
+    if (wanted === undefined || wanted === currentProfile) return;
+    $('profile').value = wanted;
+    log(`Switched to ${profileNames[wanted]} build of the app.`);
+    void begin(wanted);
+  }
+
   /** Connects the page: the explorer link, the button, the selector, and a once-a-second refresh. Starts checking. */
-  function run({ setInterval = globalThis.setInterval, initialProfile = 'current' } = {}) {
+  function run({ setInterval = globalThis.setInterval } = {}) {
+    // A link can name the build to open on (#build=older). Anything else in the fragment is ignored.
+    const initialProfile = profileFromHash(location.hash, profileNames) ?? DEFAULT_PROFILE;
+    $('profile').value = initialProfile;
     $('network').textContent = describeNetwork(network.passphrase, network.rpcUrl);
     $('explorer').href = explorerUrl(contractId);
     $('explorer').hidden = false;
@@ -286,6 +310,7 @@ export function createApp({
     document.addEventListener('visibilitychange', onVisibilityChange);
     events.addEventListener('error', (event) => showUnexpected(event.error ?? event.message));
     events.addEventListener('unhandledrejection', (event) => showUnexpected(event.reason));
+    events.addEventListener('hashchange', onHashChange);
     // Keep "last check" fresh between polls.
     setInterval(render, 1000);
     currentProfile = initialProfile;
