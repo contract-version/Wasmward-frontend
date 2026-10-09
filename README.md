@@ -30,7 +30,18 @@ cd Wasmward-frontend && pnpm install
 pnpm dev
 ```
 
-Then open <http://127.0.0.1:5173>. To keep the library somewhere else, set `WASMWARD_CORE_DIR` to that folder. `pnpm build` only builds; `pnpm serve` only serves; `pnpm test` runs the tests in `test/` (the page's display logic, run in Node against the real library, plus a check that every element `main.js` looks up still exists in `index.html`, since a renamed id would otherwise kill the page on load without any build error). The contract row links to its page on stellar.expert; the link is only built from a valid contract address.
+Then open <http://127.0.0.1:5173>. To keep the library somewhere else, set `WASMWARD_CORE_DIR` to that folder. To serve on another port, set `PORT` (a whole number from 1 to 65535).
+
+| Command | What it does |
+|---|---|
+| `pnpm build` | Bundles `src/main.js` into `dist/app.js` for the browser. |
+| `pnpm serve` | Serves `index.html` and `dist/` on 127.0.0.1 and nothing else (GET and HEAD only). |
+| `pnpm dev` | Both of the above. |
+| `pnpm test` | Runs the tests in `test/` in Node, against the real library. They cover the page's display logic, that every element `main.js` looks up exists in `index.html`, the demo's config against `wasmward.json`, the Content-Security-Policy, the colour contrast of both themes, and the dev server. |
+| `pnpm check:bundle` | After a build: no Node-only modules in the bundle, and it is within its size budget (1.5 MB, 350 KB gzipped). |
+| `pnpm csp:update` | Rewrites the stylesheet hash in the page's Content-Security-Policy after the CSS changes (`node update-csp.mjs --check` only reports). |
+
+The contract row links to its page on stellar.expert; the link is only built from a valid contract address.
 
 The page talks to the public testnet RPC (`https://soroban-testnet.stellar.org`) straight from your browser, so it needs network access. It uses the Wasmward test contract from [Wasmward-contract](https://github.com/contract-version/Wasmward-contract). If testnet is reset or that contract has expired, the status will read `missing`, and the button will stay off: the guard fails closed.
 
@@ -66,7 +77,7 @@ See [the operations guide](https://github.com/contract-version/Wasmward-backend/
 
 The demo is only as good as the contract it points at. [`wasmward.json`](wasmward.json) describes that contract the way Wasmward describes any contract, and CI uses it twice:
 
-- an offline check that `src/main.js` and `wasmward.json` still name the same contract and hash;
+- an offline test (`test/demo-config.test.js`) that the demo's config in `src/demo-config.js` and `wasmward.json` are the same: contract, hash, network and supported list;
 - a `contract-alive` job that runs the [Wasmward GitHub Action](https://github.com/contract-version/Wasmward-backend#in-github-actions) with `min-ttl-days: 1`, so a missing, changed or about-to-expire contract turns CI red. It needs testnet, so it is a separate job from the build.
 
 ## Notes
