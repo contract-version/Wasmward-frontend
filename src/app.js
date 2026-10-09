@@ -77,13 +77,23 @@ export function createApp({ document, createGuard, configFor, contractId, profil
   // in the background for as long as the page is open.
   let latestChoice = 0;
 
+  // Stops a guard that is no longer wanted. If it will not stop there is nothing more to do about it, but that
+  // must not stop the page from moving on to the next one.
+  async function discard(old) {
+    try {
+      await old.stop();
+    } catch (error) {
+      log(`Could not stop the previous check: ${error.message}`);
+    }
+  }
+
   async function begin(profile) {
     const mine = ++latestChoice;
     const previous = guard;
     guard = undefined;
     deposit = undefined;
     depositButton.disabled = true;
-    if (previous !== undefined) await previous.stop();
+    if (previous !== undefined) await discard(previous);
     if (mine !== latestChoice) return; // a newer choice arrived while the old guard was stopping
 
     let next;
@@ -119,7 +129,7 @@ export function createApp({ document, createGuard, configFor, contractId, profil
     }
     if (guard !== next) {
       // Replaced while it was starting: make sure it is not left polling.
-      await next.stop();
+      await discard(next);
       return;
     }
     render();
