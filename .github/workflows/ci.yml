@@ -50,6 +50,19 @@ jobs:
       # The stylesheet hash in the page's Content-Security-Policy must match the stylesheet.
       - name: Check the policy hash is current
         run: node update-csp.mjs --check
+      # Where the bundle's bytes are, on the run's summary page, so growth is visible before it fails the budget.
+      - name: Show what the bundle is made of
+        if: matrix.node == 22
+        run: |
+          {
+            echo '### The browser bundle'
+            echo
+            echo '```text'
+            node check-bundle.mjs
+            echo
+            node analyze-bundle.mjs --top 8
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # The demo is only as good as the contract it points at. This needs testnet, so it is its own job: a
   # testnet outage or an expiring contract fails this check without hiding whether the demo builds.
