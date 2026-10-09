@@ -45,7 +45,7 @@ test('refuses a page it cannot update safely, saying why', () => {
   assert.throws(() => withCurrentHash('<head><style>a{}</style></head>'), /expected one Content-Security-Policy meta tag, found 0/);
   assert.throws(() => withCurrentHash(page('a{}') + page('b{}')), /found 2/);
   assert.throws(() => withCurrentHash('<meta http-equiv="Content-Security-Policy" content="style-src \'sha256-OLD\'" />'), /expected one inline <style>, found 0/);
-  assert.throws(() => withCurrentHash(page('a{}', "default-src 'none'").replace('<style>a{}</style>', '<style>a{}</style><style>b{}</style>')), /found 2/);
+  assert.throws(() => withCurrentHash(page('a{}').replace('<style>a{}</style>', '<style>a{}</style><style>b{}</style>')), /expected one inline <style>, found 2/);
   assert.throws(() => withCurrentHash(page('a{}', "default-src 'none'")), /no style-src directive/);
 });
 
