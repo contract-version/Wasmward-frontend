@@ -122,3 +122,15 @@ test('the document can have its own listeners and a visibility state', async () 
   await doc.dispatch('visibilitychange');
   assert.equal(seen, 1);
 });
+
+test('it counts how many times the text of an element was set, even to the same value', () => {
+  const doc = new FakeDocument();
+  const element = doc.createElement('p');
+  assert.equal(element.textWrites, 0);
+  element.textContent = 'a';
+  element.textContent = 'a';
+  element.textContent = 'b';
+  assert.equal(element.textWrites, 3);
+  element.append('more'); // adding a child is not setting the text
+  assert.equal(element.textWrites, 3);
+});

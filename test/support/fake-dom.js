@@ -29,6 +29,9 @@ export class FakeElement {
     this.attributes = {};
     this.listeners = {};
     this.ownText = '';
+    // How many times the text was set, so a test can tell a page that rewrites a live region every second from
+    // one that writes only when something changed.
+    this.textWrites = 0;
   }
 
   get textContent() {
@@ -37,6 +40,7 @@ export class FakeElement {
 
   // Like the real one: setting text drops every child.
   set textContent(value) {
+    this.textWrites += 1;
     for (const child of this.childNodes) child.parentNode = null;
     this.childNodes = [];
     this.ownText = String(value);
