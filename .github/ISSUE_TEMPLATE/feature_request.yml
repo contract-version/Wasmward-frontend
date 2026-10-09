@@ -1,0 +1,17 @@
+name: An idea for the page
+description: Something the demo could show or do. Keep in mind that it is a small example, not a product.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like it to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help someone using Wasmward?
+      description: The page exists to show how to use the library in a browser. Does this show something the library can do?
+    validations:
+      required: true

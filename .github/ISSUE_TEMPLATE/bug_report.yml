@@ -1,0 +1,51 @@
+name: Something is wrong with the page
+description: The page shows the wrong thing, stays stuck, or does not work in your browser.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks. If this is a **security** problem, do not describe it here: see SECURITY.md.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What did you see?
+      description: What the badge said, what the Last error row said, whether the Deposit button was on or off.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Which build was selected?
+      options:
+        - The current build (the default)
+        - An older build
+        - I changed it more than once
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Firefox 130, Chrome 128, Safari 17 ...
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Anything in the browser console?
+      description: Open the developer tools and copy any red lines. A message about the Content-Security-Policy is useful.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: I reloaded the page and it still happens.
+        - label: The testnet contract is alive (the Contract row links to it on stellar.expert).
