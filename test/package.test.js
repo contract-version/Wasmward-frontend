@@ -71,3 +71,24 @@ test('no source file has a tab, a carriage return or trailing spaces, as .editor
     assert.ok(text.endsWith('\n') && !text.endsWith('\n\n'), `${file} must end with exactly one newline`);
   }
 });
+
+test('every module in src/ is described in the README, so a new one is not left out', async () => {
+  const { readdirSync } = await import('node:fs');
+  for (const name of readdirSync(new URL('../src/', import.meta.url)).filter((file) => file.endsWith('.js'))) {
+    assert.ok(readme.includes(`src/${name}`) || readme.includes(`\`${name}\``) || readme.includes(`[\`${name}\`]`), `the README does not mention src/${name}`);
+  }
+});
+
+test('the README does not still say the page is one JavaScript file or that all the code is in main.js', () => {
+  assert.doesNotMatch(readme, /one JavaScript file/);
+  assert.doesNotMatch(readme, /All of the Wasmward code is in/);
+});
+
+test('every behaviour the README promises under "When things go wrong" has a test file', async () => {
+  const { readdirSync } = await import('node:fs');
+  // (dist-test/ and test/ are siblings, and the tests run from dist-test/.)
+  const tests = readdirSync(new URL('../test/', import.meta.url));
+  for (const file of ['app-retry.test.js', 'app-retry-now.test.js', 'app-visibility.test.js', 'app-errors.test.js']) {
+    assert.ok(tests.includes(file), `no ${file}`);
+  }
+});
