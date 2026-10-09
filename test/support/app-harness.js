@@ -31,6 +31,16 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
   const waits = [];
   // Where the page's global 'error' and 'unhandledrejection' events arrive (the window, in a browser).
   const events = new FakeDocument();
+  // The address bar and the history, enough for the page to read the fragment and rewrite it.
+  const location = { pathname: '/', search: '', hash: '' };
+  const history = {
+    calls: [],
+    replaceState(_state, _title, url) {
+      this.calls.push(url);
+      const at = url.indexOf('#');
+      location.hash = at < 0 ? '' : url.slice(at);
+    },
+  };
   let time = START;
   const app = createApp({
     document: doc,
@@ -40,6 +50,8 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
     profileNames: PROFILE_NAMES,
     network: { passphrase: PASSPHRASE, rpcUrl: RPC_URL },
     events,
+    location,
+    history,
     now: () => time,
     wait: (ms) => new Promise((resolve) => waits.push({ ms, resolve })),
   });
@@ -50,6 +62,8 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
     timers,
     waits,
     events,
+    location,
+    history,
     guards: factory.guards,
     get guard() {
       return factory.guards.at(-1);
