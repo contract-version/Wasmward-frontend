@@ -22,6 +22,7 @@ export const START = Date.parse('2026-10-09T12:00:00Z');
  *   h.elapse()         lets the oldest wait end, and lets the app carry on
  *   h.logLines()       the log, newest first, without the time of day
  *   h.choose(profile)  does what a person does in the selector
+ *   h.hide() / h.show() the tab goes to the background / comes back, as the browser reports it
  */
 export function harness({ setup = () => undefined, configFor: configForOverride = configFor } = {}) {
   const doc = documentFromHtml(html);
@@ -60,6 +61,14 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
       const select = doc.getElementById('profile');
       select.value = profile;
       await select.dispatch('change');
+    },
+    async hide() {
+      doc.visibilityState = 'hidden';
+      await doc.dispatch('visibilitychange');
+    },
+    async show() {
+      doc.visibilityState = 'visible';
+      await doc.dispatch('visibilitychange');
     },
     /** Ends the oldest wait, as if its time had passed, and lets the app carry on. */
     async elapse() {

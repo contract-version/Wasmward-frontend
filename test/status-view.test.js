@@ -41,3 +41,8 @@ test('every tone is one the page stylesheet defines', async () => {
     assert.match(html, new RegExp(`\\.badge\\.${tone}\\s*\\{`), `no .badge.${tone} rule`);
   }
 });
+
+test('paused is waiting-toned, so a hidden tab never looks like a verdict on the contract', async () => {
+  const { PAUSED } = await import('../src/status-view.js');
+  assert.deepEqual(PAUSED, { text: 'paused', tone: 'waiting' });
+});
