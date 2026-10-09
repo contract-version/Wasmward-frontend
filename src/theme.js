@@ -41,3 +41,13 @@ export function applyTheme(root, theme) {
   if (isTheme(theme) && theme !== DEFAULT_THEME) root.setAttribute('data-theme', theme);
   else root.removeAttribute('data-theme');
 }
+
+/**
+ * Reads the saved theme and applies it, for the small script that runs in <head> before the page is drawn, so a
+ * saved choice does not flash the system's theme first. Returns the theme that was applied.
+ */
+export function initTheme(root, storage) {
+  const theme = readTheme(storage);
+  applyTheme(root, theme);
+  return theme;
+}
