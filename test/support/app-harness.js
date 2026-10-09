@@ -24,7 +24,8 @@ export const START = Date.parse('2026-10-09T12:00:00Z');
  *   h.choose(profile)  does what a person does in the selector
  *   h.hide() / h.show() the tab goes to the background / comes back, as the browser reports it
  */
-export function harness({ setup = () => undefined, configFor: configForOverride = configFor } = {}) {
+export function harness(options = {}) {
+  const { setup = () => undefined, configFor: configForOverride = configFor } = options;
   const doc = documentFromHtml(html);
   const factory = fakeGuardFactory(setup);
   const timers = [];
@@ -32,6 +33,15 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
   // Where the page's global 'error' and 'unhandledrejection' events arrive (the window, in a browser).
   const events = new FakeDocument();
   // The address bar and the history, enough for the page to read the fragment and rewrite it.
+  // A clipboard that remembers what was written, or fails: `h.clipboard.failWith = new Error('...')`.
+  const clipboard = {
+    written: [],
+    failWith: undefined,
+    async writeText(text) {
+      if (clipboard.failWith !== undefined) throw clipboard.failWith;
+      clipboard.written.push(text);
+    },
+  };
   const location = { pathname: '/', search: '', hash: '' };
   const history = {
     calls: [],
@@ -52,6 +62,7 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
     events,
     location,
     history,
+    clipboard: 'clipboard' in options ? options.clipboard : clipboard,
     now: () => time,
     wait: (ms) => new Promise((resolve) => waits.push({ ms, resolve })),
   });
@@ -64,6 +75,7 @@ export function harness({ setup = () => undefined, configFor: configForOverride 
     events,
     location,
     history,
+    clipboard,
     guards: factory.guards,
     get guard() {
       return factory.guards.at(-1);

@@ -37,3 +37,17 @@ test('the "something went wrong" notice is an alert and starts hidden, so it is 
   assert.match(tag, /\brole="alert"/);
   assert.match(tag, /\shidden(\s|>|\/)/);
 });
+
+test('the copy button says what it copies, for someone who cannot see where it is, and starts hidden', () => {
+  const tag = html.match(/<button\b[^>]*\bid="copy-hash"[^>]*>/)?.[0];
+  assert.ok(tag, 'index.html has no #copy-hash button');
+  assert.match(tag, /\baria-label="Copy the live Wasm hash"/);
+  assert.match(tag, /\btype="button"/);
+  assert.match(tag, /\shidden(\s|>|\/)/);
+});
+
+test('the note about a copy is a status region, so it is announced when it appears', () => {
+  const tag = html.match(/<span\b[^>]*\bid="copy-status"[^>]*>/)?.[0];
+  assert.ok(tag, 'index.html has no #copy-status');
+  assert.match(tag, /\brole="status"/);
+});
