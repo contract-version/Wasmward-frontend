@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { applyTheme, DEFAULT_THEME, readTheme, saveTheme, STORAGE_KEY, THEMES } from '../src/theme.js';
+import { applyTheme, DEFAULT_THEME, initTheme, readTheme, saveTheme, STORAGE_KEY, THEMES } from '../src/theme.js';
 
 /** A storage that holds what it is given, or throws on every use (as browsers do in some private modes). */
 function storage(initial = {}, { throws = false } = {}) {
@@ -84,4 +84,25 @@ test('applying something that is not a theme leaves the page as the default, nev
   applyTheme(html, '"><script>');
   assert.equal(html.getAttribute('data-theme'), null);
   assert.ok(![...html.attributes.values()].some((value) => value.includes('script')));
+});
+
+test('initTheme applies the saved theme to the page and says which one it applied', () => {
+  const html = root();
+  assert.equal(initTheme(html, storage({ [STORAGE_KEY]: 'dark' })), 'dark');
+  assert.equal(html.getAttribute('data-theme'), 'dark');
+});
+
+test('initTheme with nothing saved leaves the page following the system', () => {
+  const html = root();
+  html.setAttribute('data-theme', 'dark'); // as if something had set it
+  assert.equal(initTheme(html, storage()), 'auto');
+  assert.equal(html.getAttribute('data-theme'), null);
+});
+
+test('initTheme survives storage that throws or is missing, and a junk value', () => {
+  for (const store of [storage({}, { throws: true }), undefined, storage({ [STORAGE_KEY]: 'blue' })]) {
+    const html = root();
+    assert.doesNotThrow(() => initTheme(html, store));
+    assert.equal(html.getAttribute('data-theme'), null);
+  }
 });
