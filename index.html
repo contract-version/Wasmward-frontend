@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'sha256-604Gz2oJiJEY2WZp+z4lEyqh3A8g0aiqo/2VKS7tzKU='; connect-src https://soroban-testnet.stellar.org; img-src data:; base-uri 'none'; form-action 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'sha256-n9cbR0h07u3Fo+IVdU1a4tb4fAjckivXXHXNmu43dbg='; connect-src https://soroban-testnet.stellar.org; img-src data:; base-uri 'none'; form-action 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Wasmward browser example</title>
     <meta
@@ -101,6 +101,8 @@
       li:first-child { border-top: 0; }
       li time { color: var(--muted); margin-right: 8px; }
       .problem { color: var(--bad); background: var(--bad-bg); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; overflow-wrap: anywhere; }
+      .link-button { color: var(--accent); background: none; font-weight: 400; text-decoration: underline; padding: 0 6px; border-radius: 4px; }
+      #copy-status { color: var(--muted); font-size: 0.85rem; }
       .builds { list-style: none; padding: 0; margin: 0; }
       .builds li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
       .build-label { font-weight: 600; }
@@ -128,7 +130,7 @@
           <dt>Network</dt>
           <dd id="network"></dd>
           <dt>Live code</dt>
-          <dd><code id="hash">checking…</code></dd>
+          <dd><code id="hash">checking…</code> <button id="copy-hash" type="button" class="link-button" aria-label="Copy the live Wasm hash" hidden>Copy</button> <span id="copy-status" role="status"></span></dd>
           <dt>Matches</dt>
           <dd id="label">none</dd>
           <dt>Last check</dt>

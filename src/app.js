@@ -1,4 +1,5 @@
 import { describeExpiry } from './expiry.js';
+import { copyText } from './clipboard.js';
 import { ago, describeNetwork, describeSupported } from './format.js';
 import { explorerUrl } from './links.js';
 import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
@@ -21,6 +22,7 @@ export const LOG_LIMIT = 100;
  *   network      { passphrase, rpcUrl } of the network watched, for the "Network" row
  *   events       where uncaught errors, unhandled rejections and address changes arrive (the window)
  *   location     the address (for the #build=... fragment), and history to rewrite it
+ *   clipboard    where "Copy" puts the live hash (`navigator.clipboard`)
  *   now          the clock, in milliseconds since the epoch
  *   wait         waits this many milliseconds, for the pause between retries
  *
@@ -36,6 +38,7 @@ export function createApp({
   events = globalThis,
   location = globalThis.location,
   history = globalThis.history,
+  clipboard = globalThis.navigator?.clipboard,
   now = Date.now,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
@@ -67,6 +70,10 @@ export function createApp({
   // changes: a list that is replaced every second is read out again by a screen reader every second.
   let supportedList = [];
   let supportedShown;
+  // The hash on screen (what "Copy" copies), and a number for the latest copy so that an older note's timer
+  // cannot wipe a newer note.
+  let shownHash;
+  let latestCopy = 0;
   let paused = false;
   const hidden = () => document.visibilityState === 'hidden';
 
@@ -87,6 +94,26 @@ export function createApp({
     const notice = $('problem');
     notice.textContent = `Something went wrong: ${message}. Reload the page to start again.`;
     notice.hidden = false;
+  }
+
+  function showCopy(hash) {
+    $('copy-hash').hidden = hash === undefined;
+    if (hash !== shownHash) {
+      shownHash = hash;
+      latestCopy += 1; // a note about the old hash is no longer true
+      setText($('copy-status'), '');
+    }
+  }
+
+  async function onCopy() {
+    const mine = ++latestCopy;
+    const { message } = await copyText(shownHash, clipboard);
+    if (mine !== latestCopy) return; // a newer copy, or a new hash, replaced this note
+    setText($('copy-status'), message);
+    // The note clears itself. This is not awaited: the click is over once the note is up.
+    void wait(3000).then(() => {
+      if (mine === latestCopy) setText($('copy-status'), '');
+    });
   }
 
   function showSupported(liveHash) {
@@ -135,6 +162,7 @@ export function createApp({
     // "supported" while writes are already blocked.
     showBadge(statusView(guard.health().contracts.vault.status));
     setText($('hash'), state.liveWasmHash ?? 'unknown');
+    showCopy(state.liveWasmHash);
     showSupported(state.liveWasmHash);
     setText($('label'), state.matchedLabel ?? 'none');
     setText($('checked'), ago(state.lastSuccessAt, now()));
@@ -317,6 +345,7 @@ export function createApp({
     $('explorer').href = explorerUrl(contractId);
     $('explorer').hidden = false;
     depositButton.addEventListener('click', onDeposit);
+    $('copy-hash').addEventListener('click', onCopy);
     $('profile').addEventListener('change', onProfileChange);
     document.addEventListener('visibilitychange', onVisibilityChange);
     events.addEventListener('error', (event) => showUnexpected(event.error ?? event.message));
