@@ -4,7 +4,7 @@ import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
-import { createStaticServer } from '../static-server.mjs';
+import { createStaticServer, requestedPath } from '../static-server.mjs';
 
 // A throwaway project: the two things the server may serve, a pile of things it must not, and a secret file
 // next to the project (outside it) that a path trick would reach.
@@ -129,14 +129,48 @@ test('path tricks cannot reach other project files either', async () => {
   }
 });
 
-test('a null byte in the path is refused, not passed to the file system', async () => {
-  for (const path of ['/index.html%00.js', '/dist/app.js%00', '/%00']) {
-    const res = await get(path);
-    assert.ok(res.status === 404 || res.status === 400, `${path} gave ${res.status}`);
-  }
-});
-
 test('a path that only starts like dist is not dist', async () => {
   assert.equal((await get('/dist-test/x.mjs')).status, 404);
   assert.equal((await get('/distant/app.js')).status, 404);
+});
+
+test('a malformed percent-escape is a 400 and the server keeps serving', async () => {
+  for (const path of ['/%E0%A4%A', '/%', '/%zz', '/dist/%E0%A4%A/app.js', '/index.html%']) {
+    const res = await get(path);
+    assert.equal(res.status, 400, path);
+    assert.equal(res.body, 'Bad request');
+  }
+  assert.equal((await get('/')).status, 200, 'the server stopped serving after a bad request');
+});
+
+test('a null byte, however it is written, is a 400', async () => {
+  for (const path of ['/index.html%00.js', '/dist/app.js%00', '/%00']) {
+    assert.equal((await get(path)).status, 400, path);
+  }
+});
+
+test('a protocol-relative path is a file path, not a host: //x is not the index page', async () => {
+  for (const path of ['//secret.txt', '//index.html', '//dist/app.js', '///package.json']) {
+    const res = await get(path);
+    assert.ok(!res.body.includes('OUTSIDE THE PROJECT') && !res.body.includes('secret-project'), path);
+  }
+  assert.equal((await get('//secret.txt')).status, 404);
+  assert.equal((await get('//package.json')).status, 404);
+});
+
+test('a request target that is not a path is a 400', async () => {
+  for (const path of ['*', 'http://example.org/index.html', 'index.html']) {
+    assert.equal((await get(path)).status, 400, path);
+  }
+});
+
+test('requestedPath decodes, drops the query and refuses what is malformed', () => {
+  assert.equal(requestedPath('/a%20b?x=1#top'), '/a b');
+  assert.equal(requestedPath('/'), '/');
+  assert.equal(requestedPath('/dist/app.js?v=2'), '/dist/app.js');
+  assert.equal(requestedPath('/%E0%A4%A'), undefined);
+  assert.equal(requestedPath('/a%00b'), undefined);
+  assert.equal(requestedPath('x'), undefined);
+  assert.equal(requestedPath(undefined), undefined);
+  assert.equal(requestedPath(''), undefined);
 });
