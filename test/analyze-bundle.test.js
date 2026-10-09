@@ -126,3 +126,23 @@ test('run as a command it exits 2 with a message for a missing file, bad JSON, a
   assert.equal(bad.status, 2);
   assert.match(bad.stderr, /^error: --top needs a whole number/);
 });
+
+test('with several JavaScript outputs it reports the biggest, which is the app and not a small helper script', () => {
+  const meta = {
+    outputs: {
+      'dist/theme-init.js': { bytes: 100, inputs: { 'src/theme-init.js': { bytesInOutput: 60 }, 'src/theme.js': { bytesInOutput: 40 } } },
+      'dist/app.js': { bytes: 5000, inputs: { 'node_modules/big/a.js': { bytesInOutput: 4000 } } },
+      'dist/app.js.map': { bytes: 9000, inputs: {} },
+    },
+  };
+  const { total, rows } = breakdown(meta);
+  assert.equal(total, 4000);
+  assert.deepEqual(rows.map((row) => row.name), ['big']);
+});
+
+test('the order the outputs are listed in does not decide which is reported', () => {
+  const small = { bytes: 10, inputs: { 'src/a.js': { bytesInOutput: 10 } } };
+  const large = { bytes: 90, inputs: { 'src/b.js': { bytesInOutput: 90 } } };
+  assert.equal(breakdown({ outputs: { 'one.js': small, 'two.js': large } }).total, 90);
+  assert.equal(breakdown({ outputs: { 'two.js': large, 'one.js': small } }).total, 90);
+});
