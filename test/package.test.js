@@ -84,6 +84,23 @@ test('the README does not still say the page is one JavaScript file or that all 
   assert.doesNotMatch(readme, /All of the Wasmward code is in/);
 });
 
+test('the testing guide only names helpers that exist, and files that exist', () => {
+  const guide = read('docs/TESTING.md');
+  const harness = read('test/support/app-harness.js');
+  for (const helper of ['advance', 'tick', 'elapse', 'hide', 'show', 'settle', 'run', 'choose']) {
+    assert.ok(guide.includes(`h.${helper}`), `the guide does not mention h.${helper}`);
+    assert.match(harness, new RegExp(`\\b${helper}\\b`), `h.${helper} is in the guide but not in the harness`);
+  }
+  for (const file of ['test/support/fake-dom.js', 'test/support/fake-guard.js', 'test/support/app-harness.js', 'test/app-retry.test.js', 'test/app-switching.test.js', 'test/page.test.js', 'test/import-side-effects.test.js']) {
+    assert.doesNotThrow(() => read(file), `${file} does not exist`);
+  }
+  for (const [, link] of guide.matchAll(/\]\(\.\.\/([^)#]+)\)/g)) assert.doesNotThrow(() => read(link), `the guide links to ${link}, which does not exist`);
+});
+
+test('CONTRIBUTING points at the testing guide', () => {
+  assert.match(read('CONTRIBUTING.md'), /docs\/TESTING\.md/);
+});
+
 test('every behaviour the README promises under "When things go wrong" has a test file', async () => {
   const { readdirSync } = await import('node:fs');
   // (dist-test/ and test/ are siblings, and the tests run from dist-test/.)
