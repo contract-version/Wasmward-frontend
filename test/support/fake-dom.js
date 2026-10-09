@@ -91,6 +91,10 @@ export class FakeElement {
     this.attributes[name] = String(value);
   }
 
+  removeAttribute(name) {
+    delete this.attributes[name];
+  }
+
   getAttribute(name) {
     return name in this.attributes ? this.attributes[name] : null;
   }
@@ -119,6 +123,8 @@ export class FakeDocument {
     this.listeners = {};
     this.visibilityState = 'visible';
     this.title = '';
+    // The <html> element: where the page puts data-theme.
+    this.documentElement = new FakeElement('html');
   }
 
   getElementById(id) {

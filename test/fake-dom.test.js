@@ -134,3 +134,19 @@ test('it counts how many times the text of an element was set, even to the same 
   element.append('more'); // adding a child is not setting the text
   assert.equal(element.textWrites, 3);
 });
+
+test('the document has a root element that takes attributes, for data-theme', () => {
+  const doc = new FakeDocument();
+  assert.equal(doc.documentElement.tagName, 'HTML');
+  doc.documentElement.setAttribute('data-theme', 'dark');
+  assert.equal(doc.documentElement.getAttribute('data-theme'), 'dark');
+});
+
+test('an element can have an attribute removed again', () => {
+  const doc = new FakeDocument();
+  const element = doc.createElement('p');
+  element.setAttribute('title', 'x');
+  element.removeAttribute('title');
+  assert.equal(element.getAttribute('title'), null);
+  assert.doesNotThrow(() => element.removeAttribute('never-set'));
+});
