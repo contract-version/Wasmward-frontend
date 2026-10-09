@@ -86,7 +86,16 @@ export function createApp({ document, createGuard, configFor, contractId, profil
     if (previous !== undefined) await previous.stop();
     if (mine !== latestChoice) return; // a newer choice arrived while the old guard was stopping
 
-    const next = createGuard(configFor(profile));
+    let next;
+    try {
+      next = createGuard(configFor(profile));
+    } catch (error) {
+      // Nothing to watch with: say so, rather than leave a page that has quietly stopped working.
+      showBadge(CANNOT_CHECK);
+      hint.textContent = error.message;
+      log(`Could not start: ${error.message}`);
+      return;
+    }
     guard = next;
     deposit = next.guard('vault', async (amount) => `Pretended to send a transaction depositing ${amount}.`);
 
@@ -117,6 +126,11 @@ export function createApp({ document, createGuard, configFor, contractId, profil
   }
 
   async function onDeposit() {
+    if (deposit === undefined) {
+      // Between one choice of build and the next there is no guard to send a write through.
+      log('Not ready yet: the contract has not been checked.');
+      return;
+    }
     try {
       log(await deposit(10));
     } catch (error) {
@@ -126,8 +140,14 @@ export function createApp({ document, createGuard, configFor, contractId, profil
   }
 
   function onProfileChange(event) {
-    log(`Switched to ${profileNames[event.target.value]} build of the app.`);
-    void begin(event.target.value);
+    const profile = event.target.value;
+    // Object.hasOwn, not `in`: "constructor" and "__proto__" are not builds.
+    if (!Object.hasOwn(profileNames, profile)) {
+      log(`Ignored a choice of build the page does not know: '${profile}'`);
+      return;
+    }
+    log(`Switched to ${profileNames[profile]} build of the app.`);
+    void begin(profile);
   }
 
   /** Connects the page: the explorer link, the button, the selector, and a once-a-second refresh. Starts checking. */
