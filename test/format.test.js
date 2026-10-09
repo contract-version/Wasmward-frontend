@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ago, describeNetwork } from '../src/format.js';
+import { ago, describeNetwork, describeSupported, shortHash } from '../src/format.js';
 
 const NOW = 1_800_000_000_000;
 
@@ -67,4 +67,40 @@ test('only the host of the RPC is shown: never a path, a query or credentials, w
 test('an RPC address that cannot be read is left out rather than shown raw', () => {
   assert.equal(describeNetwork('Test SDF Network ; September 2015', 'not a url'), 'Stellar testnet');
   assert.equal(describeNetwork('Test SDF Network ; September 2015', ''), 'Stellar testnet');
+});
+
+const HASH = 'a7a82511fa284650178b02fe3a4bafc587b95212f2f8ce647f2df5ef4cf42509';
+
+test('a long hash is shortened to its first and last 8 characters, so it can be recognised', () => {
+  assert.equal(shortHash(HASH), 'a7a82511…4cf42509');
+  assert.equal(shortHash('0'.repeat(64)), '00000000…00000000');
+});
+
+test('a short value is left whole, and nothing that is not text is turned into text', () => {
+  assert.equal(shortHash('abc'), 'abc');
+  assert.equal(shortHash('a'.repeat(17)), `${'a'.repeat(8)}…${'a'.repeat(8)}`);
+  assert.equal(shortHash('a'.repeat(16)), 'a'.repeat(16), 'at 16 characters, shortening would hide nothing');
+  assert.equal(shortHash(undefined), '');
+  assert.equal(shortHash(null), '');
+  assert.equal(shortHash(42), '');
+});
+
+test('describeSupported lists each supported build, and marks the one that is live', () => {
+  const list = [{ wasmHash: HASH, label: 'v1' }, { wasmHash: 'b'.repeat(64), label: 'v2' }];
+  assert.deepEqual(describeSupported(list, HASH), [
+    { label: 'v1', hash: HASH, short: 'a7a82511…4cf42509', live: true },
+    { label: 'v2', hash: 'b'.repeat(64), short: 'bbbbbbbb…bbbbbbbb', live: false },
+  ]);
+});
+
+test('with no live hash known, or one that matches nothing, no build is marked live', () => {
+  const list = [{ wasmHash: HASH, label: 'v1' }];
+  assert.deepEqual(describeSupported(list, undefined).map((row) => row.live), [false]);
+  assert.deepEqual(describeSupported(list, 'c'.repeat(64)).map((row) => row.live), [false]);
+});
+
+test('a build without a label is called "unlabelled", and an empty list gives no rows', () => {
+  assert.equal(describeSupported([{ wasmHash: HASH }], HASH)[0].label, 'unlabelled');
+  assert.deepEqual(describeSupported([], HASH), []);
+  assert.deepEqual(describeSupported(undefined, HASH), []);
 });
