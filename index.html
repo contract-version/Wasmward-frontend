@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'sha256-D7k+nFa6M3QLp/2+LACY0i3M64QjpBqcCCUNWLz59CQ='; connect-src https://soroban-testnet.stellar.org; img-src data:; base-uri 'none'; form-action 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'sha256-PodWot1KkaVrPA7/bs9lwckKHK732JTmfYqel2+0VxQ='; connect-src https://soroban-testnet.stellar.org; img-src data:; base-uri 'none'; form-action 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Wasmward browser example</title>
     <meta
@@ -27,6 +27,7 @@
         --wait: #7a5b00;
         --wait-bg: #fcf0c8;
         --accent: #2f5bd6;
+        --on-accent: #ffffff;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -42,6 +43,7 @@
           --wait: #f2cf63;
           --wait-bg: #382d0b;
           --accent: #8aa6ff;
+          --on-accent: #12151b;
         }
       }
       * { box-sizing: border-box; }
@@ -81,7 +83,7 @@
       button {
         font: inherit;
         font-weight: 600;
-        color: #fff;
+        color: var(--on-accent);
         background: var(--accent);
         border: 0;
         border-radius: 8px;
