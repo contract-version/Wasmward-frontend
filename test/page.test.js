@@ -65,3 +65,13 @@ test('the big script is still a module, loaded after the page, so it does not bl
   assert.match(tag, /type="module"/);
   assert.ok(html.indexOf(tag) > html.indexOf('</main>'));
 });
+
+test('the browser bar colours are the page backgrounds, for the system theme', () => {
+  const colours = [...html.matchAll(/<meta\s+name="theme-color"\s+content="(#[0-9a-f]{6})"\s+media="\(prefers-color-scheme: (light|dark)\)"/g)];
+  assert.deepEqual(colours.map((match) => match[2]).sort(), ['dark', 'light']);
+  const light = html.match(/--bg:\s*(#[0-9a-f]{6})/)[1];
+  const dark = html.match(/prefers-color-scheme: dark\)\s*\{\s*:root:not\(\[data-theme="light"\]\)\s*\{\s*--bg:\s*(#[0-9a-f]{6})/)[1];
+  const by = Object.fromEntries(colours.map((match) => [match[2], match[1]]));
+  assert.equal(by.light, light);
+  assert.equal(by.dark, dark);
+});
