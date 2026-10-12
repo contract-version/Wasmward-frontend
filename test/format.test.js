@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ago, describeNetwork, describeSupported, shortHash } from '../src/format.js';
+import { ago, describeNetwork, describeSupported, shortAddress, shortHash } from '../src/format.js';
 
 const NOW = 1_800_000_000_000;
 
@@ -103,4 +103,14 @@ test('a build without a label is called "unlabelled", and an empty list gives no
   assert.equal(describeSupported([{ wasmHash: HASH }], HASH)[0].label, 'unlabelled');
   assert.deepEqual(describeSupported([], HASH), []);
   assert.deepEqual(describeSupported(undefined, HASH), []);
+});
+
+test('an address is shown as its first and last six characters', () => {
+  assert.equal(shortAddress('CBR5ZFDI2GBXG66DAEWWHSAK4NDLKSKHWVUEUSOM4UOBM66TI6DYPDPV'), 'CBR5ZF…DYPDPV');
+});
+
+test('a short address is left whole, and anything that is not text is empty', () => {
+  assert.equal(shortAddress('C'.repeat(14)), 'C'.repeat(14));
+  assert.equal(shortAddress(undefined), '');
+  assert.equal(shortAddress(42), '');
 });

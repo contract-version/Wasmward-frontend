@@ -51,6 +51,16 @@ export function shortHash(hash) {
 }
 
 /**
+ * A contract address as its first and last 6 characters ("CBR5ZF…I6DYPDPV" style), enough to recognise it beside
+ * the explorer link that has the whole of it. Anything that is not text gives an empty string, and an address of
+ * 14 characters or fewer is left whole.
+ */
+export function shortAddress(address) {
+  if (typeof address !== 'string') return '';
+  return address.length <= 14 ? address : `${address.slice(0, 6)}…${address.slice(-6)}`;
+}
+
+/**
  * The rows of the "What this build supports" list: label, full hash, short hash, and whether that build is the one
  * the contract is running now. `supported` is the config's list; `liveHash` is what the guard last saw, if anything.
  */
