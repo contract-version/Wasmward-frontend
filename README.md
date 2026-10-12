@@ -56,7 +56,7 @@ Then open <http://127.0.0.1:5173>. To keep the library somewhere else, set `WASM
 | `pnpm analyze` | After a build: what the bundle is made of, by package (from `dist/meta.json`). `--top N` shows more rows. |
 | `pnpm csp:update` | Rewrites the stylesheet hash in the page's Content-Security-Policy after the CSS changes (`node update-csp.mjs --check` only reports). |
 
-The contract row links to its page on stellar.expert; the link is only built from a valid contract address.
+The contract row shows the address in short form and links to its page on stellar.expert; the link is only built from a valid contract address.
 
 The page talks to the public testnet RPC (`https://soroban-testnet.stellar.org`) straight from your browser, so it needs network access. It uses the Wasmward test contract from [Wasmward-contract](https://github.com/contract-version/Wasmward-contract). If testnet is reset or that contract has expired, the status will read `missing`, and the button will stay off: the guard fails closed.
 
@@ -68,7 +68,7 @@ The page's behaviour is `createApp` in [`src/app.js`](src/app.js). It takes ever
 |---|---|
 | [`demo-config.js`](src/demo-config.js) | The contract, the hashes, and the pretend releases of the app. |
 | [`status-view.js`](src/status-view.js) | How a status is shown: the badge, the tab title. |
-| [`format.js`](src/format.js) | "5 seconds ago", the network row, the supported list, short hashes. |
+| [`format.js`](src/format.js) | "5 seconds ago", the network row, the supported list, short hashes and addresses. |
 | [`expiry.js`](src/expiry.js) | The "Time left" row. |
 | [`retry.js`](src/retry.js) | How long to wait between retries, and which errors are worth one. |
 | [`route.js`](src/route.js) | Reading and writing `#build=...`, strictly. |
