@@ -21,6 +21,13 @@ test('starting connects the explorer link and asks for a once-a-second refresh',
   assert.deepEqual(h.timers.map((t) => t.ms), [1000]);
 });
 
+test('the contract row shows a short form of its address beside the link that has all of it', async () => {
+  const h = harness();
+  await h.run();
+  assert.equal(h.el('contract-id').textContent, `${CONTRACT_ID.slice(0, 6)}…${CONTRACT_ID.slice(-6)}`);
+  assert.ok(!h.el('contract-id').textContent.includes(CONTRACT_ID));
+});
+
 test('it watches the contract for the current build first, which supports only v1', async () => {
   const h = harness();
   await h.run();

@@ -12,7 +12,7 @@ const idsUsedByScript = [...new Set([...script.matchAll(/\$\('([^']+)'\)/g)].map
 
 test('the script looks up at least the ids this page is known to use', () => {
   // Guards the test itself: if the pattern stopped matching, the checks below would pass for nothing.
-  for (const id of ['badge', 'deposit', 'hint', 'hash', 'expiry', 'explorer', 'log']) {
+  for (const id of ['badge', 'deposit', 'hint', 'hash', 'expiry', 'explorer', 'contract-id', 'log']) {
     assert.ok(idsUsedByScript.includes(id), `app.js no longer looks up #${id}`);
   }
 });

@@ -1,6 +1,6 @@
 import { describeExpiry } from './expiry.js';
 import { copyText } from './clipboard.js';
-import { ago, describeNetwork, describeSupported } from './format.js';
+import { ago, describeNetwork, describeSupported, shortAddress } from './format.js';
 import { explorerUrl } from './links.js';
 import { describeDelay, isPermanent, retryDelayMs } from './retry.js';
 import { hashForProfile, profileFromHash } from './route.js';
@@ -382,6 +382,7 @@ export function createApp({
     const initialProfile = profileFromHash(location.hash, profileNames) ?? DEFAULT_PROFILE;
     $('profile').value = initialProfile;
     setText($('network'), describeNetwork(network.passphrase, network.rpcUrl));
+    setText($('contract-id'), shortAddress(contractId));
     $('explorer').href = explorerUrl(contractId);
     $('explorer').hidden = false;
     theme = readTheme(storage);
