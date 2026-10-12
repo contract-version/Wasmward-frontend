@@ -13,6 +13,8 @@ heading "Unreleased", grouped by what a person using the page, or working on it,
 - **Shows the effective status.** The badge followed the status of the last check, so a stalled poll still read "supported" while writes were blocked. It now reads `stale`.
 - **New:** a Network row, a list of the builds this app supports (the live one marked "running now"), a Copy button for the live hash, the status in the tab title, a Theme choice (follow the system, light or dark, remembered and applied before the page is drawn), and the chosen build in the address (`#build=older`) so a link can share it.
 - **Fixed:** the Changes log grew without limit (it keeps the last 100); an unknown build choice left a dead page; a `stop()` that failed blocked switching builds; the once-a-second refresh rewrote text that had not changed, which can make a screen reader read a live region again every second; log times were not real `<time>` elements.
+- **Keyboard:** the Changes log scrolls after a few entries but could not take focus, so keyboard users could not read older ones. It can now, and shows an outline when it has it.
+- **Small things:** the contract row shows the address in short form (`CBR5ZF…DYPDPV`) beside the explorer link, and a phone's browser bar takes the page's background colour in light and dark.
 - **Readable in dark mode:** links were the browser's default blue on a dark card (about 1.7:1) and the button label was 2.34:1; the disabled button's label was just under 4.5:1 in the light theme. Contrast is now tested for every pair of colours in both themes.
 
 ### Security
