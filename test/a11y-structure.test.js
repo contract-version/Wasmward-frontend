@@ -87,3 +87,12 @@ test('nothing is hidden from the accessibility tree by aria-hidden', () => {
 test('the page has a <noscript> message, since it does nothing without scripts', () => {
   assert.match(body, /<noscript>[^<]+<\/noscript>/);
 });
+
+test('the log scrolls, so the keyboard can reach it and it shows where focus is', () => {
+  // A region that scrolls but cannot take focus cannot be scrolled with the keyboard.
+  assert.match(html, /\bol\s*\{[^}]*overflow:\s*auto/);
+  const log = html.match(/<ol\b[^>]*\bid="log"[^>]*>/)?.[0] ?? '';
+  assert.match(log, /\btabindex="0"/);
+  assert.match(log, /\baria-labelledby="log-heading"/);
+  assert.match(html, /ol:focus-visible/);
+});
