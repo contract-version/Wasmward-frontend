@@ -47,3 +47,7 @@ test('every <option> in the page is a profile, and every profile has an option',
   const options = [...select.matchAll(/<option\s+value="([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(options.sort(), Object.keys(PROFILES).sort());
 });
+
+test('wasmward.json points an editor at the Wasmward JSON Schema, which the library ignores', () => {
+  assert.match(wasmwardJson.$schema, /^https:\/\/raw\.githubusercontent\.com\/contract-version\/Wasmward-backend\/main\/schema\/wasmward\.schema\.json$/);
+});
